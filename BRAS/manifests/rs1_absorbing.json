@@ -1,0 +1,76 @@
+{
+  "name": "rs1_absorbing",
+  "_note_scene": "BRAS RS1, rock wool slab on rigid floor. Protocol RELATIVE to the rigid case (events_defaults). PREREQUISITE: run rs1_rigid.json FIRST (its *_sim.wav files are the simulated reference).",
+  "_note_materiau": "Miki FITTED on the ISO 10534-2 tube (normal incidence, 100-4000 Hz, rms 0.016) then VALIDATED in prediction against the in-situ 30/45/60 deg measurements (mean error 0.05-0.07 in alpha, 500 Hz-8 kHz). Known deviation at 8 kHz (~0.1-0.2 in |R|): slab facing, visible in their data too.",
+  "_note_pairs": "python3 tools/sofa_pairs.py 'RIRs/RS1_RIRs_Absorbing.sofa' --pattern 'RIRs/wav/RS1_RIR_Absorbing_{emitter}_{receiver}.wav' --into rs1_absorbing.json",
+  "fs": 44100,
+  "duration": 0.25,
+  "engine": {
+    "n_rays": 20000,
+    "ism_order": 1,
+    "fdtd": false,
+    "seed": 1234,
+    "temperature_c": 20.3,
+    "humidity_percent": 41.5
+  },
+  "events_defaults": {
+    "mirror_z": 0.0,
+    "rigid_R": 0.99,
+    "rigid_reference_pattern": "RIRs/wav/RS1_RIR_Rigid_{emitter}_{receiver}.wav",
+    "rigid_sim_pattern": "rs1_rigid_report/{label}_sim.wav"
+  },
+  "geometry": {
+    "triangles": [
+      [
+        [
+          -15.0,
+          -15.0,
+          0.0
+        ],
+        [
+          15.0,
+          -15.0,
+          0.0
+        ],
+        [
+          15.0,
+          15.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          -15.0,
+          -15.0,
+          0.0
+        ],
+        [
+          15.0,
+          15.0,
+          0.0
+        ],
+        [
+          -15.0,
+          15.0,
+          0.0
+        ]
+      ]
+    ],
+    "tri_mat": [
+      0,
+      0
+    ]
+  },
+  "materials": {
+    "laine_roche": {
+      "phys": {
+        "model": "miki",
+        "sigma": 116000,
+        "thickness_mm": 25
+      },
+      "scattering": 0.0,
+      "transmission": 0.0
+    }
+  },
+  "pairs": []
+}

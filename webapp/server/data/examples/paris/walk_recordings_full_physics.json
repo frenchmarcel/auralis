@@ -1,0 +1,160 @@
+{
+ "fs": 32000,
+ "duration_s": 41.63,
+ "render_s": 25116.0,
+ "normalization_db": -3.32,
+ "credits": [
+  "brunoboselli (freesound.org/s/634880), CC0",
+  "KikeVilaplana (freesound.org/s/566891), CC0",
+  "EverydaySounds (freesound.org/s/268622), CC0",
+  "Nox_Sound (freesound.org/s/522221), CC0",
+  "SignatureSoundsOrg (freesound.org/s/869048), CC0",
+  "kyles (freesound.org/s/451668), CC0",
+  "kyles (freesound.org/s/635757), CC0",
+  "kyles (freesound.org/s/451516), CC0",
+  "FABIAN HRTF database, TU Berlin (Brinkmann et al., JAES 2017), CC BY 4.0",
+  "lupalenzuela (freesound.org/s/512142), CC0"
+ ],
+ "engine_used": "cuda",
+ "doppler": true,
+ "reverb_dt": 0.75,
+ "hop": 2048,
+ "n_keys": [
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55
+ ],
+ "timings": [
+  {
+   "setup_s": 0.7003629207611084,
+   "tail_keys_s": 6.699463844299316,
+   "hops_s": 15.753658056259155,
+   "direct_s": 0.5608794689178467,
+   "wave_s": 2.878316640853882
+  },
+  {
+   "setup_s": 0.696103572845459,
+   "tail_keys_s": 6.616624116897583,
+   "hops_s": 15.967395305633545,
+   "direct_s": 0.5106906890869141,
+   "wave_s": 2.9553606510162354
+  },
+  {
+   "setup_s": 0.7121288776397705,
+   "tail_keys_s": 6.5779688358306885,
+   "hops_s": 16.185028314590454,
+   "direct_s": 0.4810216426849365,
+   "wave_s": 2.978400707244873
+  },
+  {
+   "setup_s": 0.6998677253723145,
+   "tail_keys_s": 6.4735119342803955,
+   "hops_s": 9.719834089279175,
+   "direct_s": 0.20702600479125977,
+   "wave_s": 2.913994550704956
+  },
+  {
+   "setup_s": 0.692645788192749,
+   "tail_keys_s": 6.595214366912842,
+   "hops_s": 16.359644651412964,
+   "direct_s": 0.4362325668334961,
+   "wave_s": 0.32177042961120605
+  },
+  {
+   "setup_s": 0.6861310005187988,
+   "tail_keys_s": 6.387367248535156,
+   "hops_s": 9.18648648262024,
+   "direct_s": 0.18728232383728027,
+   "wave_s": 0.32599472999572754
+  },
+  {
+   "setup_s": 0.7064733505249023,
+   "tail_keys_s": 6.501905679702759,
+   "hops_s": 9.331125259399414,
+   "direct_s": 0.21024489402770996,
+   "wave_s": 0.3284416198730469
+  },
+  {
+   "setup_s": 0.6988472938537598,
+   "tail_keys_s": 6.678766250610352,
+   "hops_s": 11.072418451309204,
+   "direct_s": 0.1885242462158203,
+   "wave_s": 0.33121228218078613
+  },
+  {
+   "setup_s": 0.6894271373748779,
+   "tail_keys_s": 6.695650339126587,
+   "hops_s": 10.891321897506714,
+   "direct_s": 0.35169053077697754,
+   "wave_s": 0.3213944435119629
+  },
+  {
+   "setup_s": 0.6899759769439697,
+   "tail_keys_s": 6.606553316116333,
+   "hops_s": 10.249775171279907,
+   "direct_s": 0.1848914623260498,
+   "wave_s": 0.3294374942779541
+  },
+  {
+   "setup_s": 0.6972165107727051,
+   "tail_keys_s": 6.675164222717285,
+   "hops_s": 15.527706146240234,
+   "direct_s": 0.5073046684265137,
+   "wave_s": 0.33615756034851074
+  },
+  {
+   "setup_s": 0.6972446441650391,
+   "tail_keys_s": 6.80813193321228,
+   "hops_s": 14.959734201431274,
+   "direct_s": 0.593245267868042,
+   "wave_s": 0.3390934467315674
+  },
+  {
+   "setup_s": 0.70035719871521,
+   "tail_keys_s": 6.704156875610352,
+   "hops_s": 15.725911617279053,
+   "direct_s": 0.5869688987731934,
+   "wave_s": 0.3384730815887451
+  },
+  {
+   "setup_s": 0.7012197971343994,
+   "tail_keys_s": 6.910099029541016,
+   "hops_s": 10.090096235275269,
+   "direct_s": 0.28234338760375977,
+   "wave_s": 0.33854198455810547
+  },
+  {
+   "setup_s": 0.6888525485992432,
+   "tail_keys_s": 6.650988578796387,
+   "hops_s": 11.807324409484863,
+   "direct_s": 0.19066619873046875,
+   "wave_s": 0.33495235443115234
+  }
+ ],
+ "warnings": [
+  "a source and the receiver both move: the wave band (FDTD) takes two runs per key frame of the receiver (a static receiver or static sources take 1-2 wave runs in all)"
+ ],
+ "wave": {
+  "animated": true,
+  "note": "both move: reciprocity at 164 receiver key frames (328 runs), 2102/2102/2102/2101/164/164/164/164/164/164/164/164/164/164/164 source key frames, crossover 250 Hz"
+ },
+ "background_noise": {
+  "curve": "recording: Paris traffic hum",
+  "dba": 60.0,
+  "speech_dba_1m": 60.0,
+  "effort": "normal"
+ },
+ "turns": null
+}

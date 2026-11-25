@@ -1,0 +1,12 @@
+Réaumur Street, Paris (2nd arrondissement), between Dussoubs Street and Sébastopol Boulevard.
+
+street.obj, street.json and the buildings of reaumur.glb are derived from OpenStreetMap data:
+(c) OpenStreetMap contributors, available under the Open Database License 1.0 (ODbL),
+https://www.openstreetmap.org/copyright. Downloaded on 2026-11-10 (Overpass API), converted by
+tools/osm_street.py: building footprints extruded to heights derived from their storey counts
+(ground floor 4.0 m, upper floors 3.1 m, mansard storeys 1.5 m; 6 storeys when untagged), the
+courtyards of multipolygon buildings filled.
+
+reaumur.glb (display only, never seen by the solvers), made by tools/street_visual.py:
+facades, mansards and zinc roofs drawn procedurally (Auralis); road and sidewalk textures from
+Poly Haven "asphalt_02" (CC0, https://polyhaven.com).

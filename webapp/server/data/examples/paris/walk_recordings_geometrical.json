@@ -1,0 +1,140 @@
+{
+ "fs": 32000,
+ "duration_s": 41.63,
+ "render_s": 296.2,
+ "normalization_db": -3.58,
+ "credits": [
+  "brunoboselli (freesound.org/s/634880), CC0",
+  "KikeVilaplana (freesound.org/s/566891), CC0",
+  "EverydaySounds (freesound.org/s/268622), CC0",
+  "Nox_Sound (freesound.org/s/522221), CC0",
+  "SignatureSoundsOrg (freesound.org/s/869048), CC0",
+  "kyles (freesound.org/s/451668), CC0",
+  "kyles (freesound.org/s/635757), CC0",
+  "kyles (freesound.org/s/451516), CC0",
+  "FABIAN HRTF database, TU Berlin (Brinkmann et al., JAES 2017), CC BY 4.0",
+  "lupalenzuela (freesound.org/s/512142), CC0"
+ ],
+ "engine_used": "cuda",
+ "doppler": true,
+ "reverb_dt": 0.75,
+ "hop": 2048,
+ "n_keys": [
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55,
+  55
+ ],
+ "timings": [
+  {
+   "setup_s": 0.9219019412994385,
+   "tail_keys_s": 7.72586989402771,
+   "hops_s": 14.780828714370728,
+   "direct_s": 0.48267030715942383
+  },
+  {
+   "setup_s": 0.6682085990905762,
+   "tail_keys_s": 6.403640985488892,
+   "hops_s": 14.99002456665039,
+   "direct_s": 0.44821715354919434
+  },
+  {
+   "setup_s": 0.66660475730896,
+   "tail_keys_s": 6.349557638168335,
+   "hops_s": 15.14841365814209,
+   "direct_s": 0.43646717071533203
+  },
+  {
+   "setup_s": 0.6668226718902588,
+   "tail_keys_s": 6.317156553268433,
+   "hops_s": 9.091832876205444,
+   "direct_s": 0.20829391479492188
+  },
+  {
+   "setup_s": 0.6709749698638916,
+   "tail_keys_s": 6.321778297424316,
+   "hops_s": 15.509381771087646,
+   "direct_s": 0.4132692813873291
+  },
+  {
+   "setup_s": 0.6691415309906006,
+   "tail_keys_s": 6.230981826782227,
+   "hops_s": 8.504568099975586,
+   "direct_s": 0.1868457794189453
+  },
+  {
+   "setup_s": 0.6712374687194824,
+   "tail_keys_s": 6.281337261199951,
+   "hops_s": 8.635142087936401,
+   "direct_s": 0.18731427192687988
+  },
+  {
+   "setup_s": 0.6708669662475586,
+   "tail_keys_s": 6.468137741088867,
+   "hops_s": 10.35615849494934,
+   "direct_s": 0.19313406944274902
+  },
+  {
+   "setup_s": 0.6702070236206055,
+   "tail_keys_s": 6.496135950088501,
+   "hops_s": 10.233006477355957,
+   "direct_s": 0.330350399017334
+  },
+  {
+   "setup_s": 0.6720385551452637,
+   "tail_keys_s": 6.399707555770874,
+   "hops_s": 9.590070724487305,
+   "direct_s": 0.19174480438232422
+  },
+  {
+   "setup_s": 0.6713926792144775,
+   "tail_keys_s": 6.493040323257446,
+   "hops_s": 14.31508469581604,
+   "direct_s": 0.4476642608642578
+  },
+  {
+   "setup_s": 0.6945133209228516,
+   "tail_keys_s": 6.632006406784058,
+   "hops_s": 14.216665267944336,
+   "direct_s": 0.5211172103881836
+  },
+  {
+   "setup_s": 0.6691281795501709,
+   "tail_keys_s": 6.533062696456909,
+   "hops_s": 14.834067583084106,
+   "direct_s": 0.5190825462341309
+  },
+  {
+   "setup_s": 0.6708102226257324,
+   "tail_keys_s": 6.678323030471802,
+   "hops_s": 9.426929950714111,
+   "direct_s": 0.2625284194946289
+  },
+  {
+   "setup_s": 0.6683080196380615,
+   "tail_keys_s": 6.414612770080566,
+   "hops_s": 11.338611364364624,
+   "direct_s": 0.19150495529174805
+  }
+ ],
+ "warnings": [],
+ "wave": null,
+ "background_noise": {
+  "curve": "recording: Paris traffic hum",
+  "dba": 60.0,
+  "speech_dba_1m": 60.0,
+  "effort": "normal"
+ },
+ "turns": null
+}

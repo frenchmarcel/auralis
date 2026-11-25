@@ -1,0 +1,128 @@
+{
+ "522221": {
+  "file": "fs_522221.wav",
+  "role": "car",
+  "title": "Vehicle_Car_Peugeot_308_Acceleration_Idle_Mono.wav",
+  "author": "Nox_Sound",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/522221/",
+  "credit": "Vehicle_Car_Peugeot_308_Acceleration_Idle_Mono.wav by Nox_Sound (freesound.org/s/522221/), CC0 1.0",
+  "segment_s": [
+   0.0,
+   60.0
+  ],
+  "source_duration_s": 60.4
+ },
+ "268622": {
+  "file": "fs_268622.wav",
+  "role": "car",
+  "title": "VW Golf R (Zoom H1, OST Lav).wav",
+  "author": "EverydaySounds",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/268622/",
+  "credit": "VW Golf R (Zoom H1, OST Lav).wav by EverydaySounds (freesound.org/s/268622/), CC0 1.0",
+  "segment_s": [
+   287.5,
+   347.5
+  ],
+  "source_duration_s": 504.2
+ },
+ "451668": {
+  "file": "fs_451668.wav",
+  "role": "bus",
+  "title": "school bus truck ext idle engine close2.flac",
+  "author": "kyles",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/451668/",
+  "credit": "school bus truck ext idle engine close2.flac by kyles (freesound.org/s/451668/), CC0 1.0",
+  "segment_s": [
+   0.0,
+   36.0
+  ],
+  "source_duration_s": 36.0
+ },
+ "635757": {
+  "file": "fs_635757.wav",
+  "role": "flow",
+  "title": "traffic heavy boulevard passing by close cars trucks people fast Montreal, Canada.flac",
+  "author": "kyles",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/635757/",
+  "credit": "traffic heavy boulevard passing by close cars trucks people fast Montreal, Canada.flac by kyles (freesound.org/s/635757/), CC0 1.0",
+  "segment_s": [
+   164.0,
+   224.0
+  ],
+  "source_duration_s": 229.2
+ },
+ "451516": {
+  "file": "fs_451516.wav",
+  "role": "flow",
+  "title": "traffic light mopeds scooters cars trucks motorcycles rickshaws pass by good detail side street with walls echo in front of city gate2 like from window India.flac",
+  "author": "kyles",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/451516/",
+  "credit": "traffic light mopeds scooters cars trucks motorcycles rickshaws pass by good detail side street with walls echo in front of city gate2 like from window India.flac by kyles (freesound.org/s/451516/), CC0 1.0",
+  "segment_s": [
+   89.5,
+   149.5
+  ],
+  "source_duration_s": 280.4
+ },
+ "512142": {
+  "file": "fs_512142.wav",
+  "role": "hum",
+  "title": "Paris_traffic.wav",
+  "author": "lupalenzuela",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/512142/",
+  "credit": "Paris_traffic.wav by lupalenzuela (freesound.org/s/512142/), CC0 1.0",
+  "segment_s": [
+   0.0,
+   50.4
+  ],
+  "source_duration_s": 50.4
+ },
+ "566891": {
+  "file": "fs_566891.wav",
+  "role": "crowd",
+  "title": "Medium Crowd Ambience Outdoor Talking Background Spanish STR_Zoom_H4nPro",
+  "author": "KikeVilaplana",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/566891/",
+  "credit": "Medium Crowd Ambience Outdoor Talking Background Spanish STR_Zoom_H4nPro by KikeVilaplana (freesound.org/s/566891/), CC0 1.0",
+  "segment_s": [
+   13.5,
+   73.5
+  ],
+  "source_duration_s": 115.0
+ },
+ "634880": {
+  "file": "fs_634880.wav",
+  "role": "crowd",
+  "title": "Generic Exterior Walla",
+  "author": "brunoboselli",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/634880/",
+  "credit": "Generic Exterior Walla by brunoboselli (freesound.org/s/634880/), CC0 1.0",
+  "segment_s": [
+   0.0,
+   31.0
+  ],
+  "source_duration_s": 31.0
+ },
+ "869048": {
+  "file": "fs_869048.wav",
+  "role": "crowd",
+  "title": "Walla_In_Madrid_Spain",
+  "author": "SignatureSoundsOrg",
+  "licence": "CC0 1.0",
+  "url": "https://freesound.org/s/869048/",
+  "credit": "Walla_In_Madrid_Spain by SignatureSoundsOrg (freesound.org/s/869048/), CC0 1.0",
+  "segment_s": [
+   0.0,
+   60.0
+  ],
+  "source_duration_s": 130.9
+ }
+}

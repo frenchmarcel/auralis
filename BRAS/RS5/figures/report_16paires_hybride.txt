@@ -1,0 +1,21 @@
+bench RS5 (FDTD+UTD hybrid): windowed TF per pair, sim vs measurement (Pearson)
+fuse_low_high blend, crossover=700 Hz  window=0.03 s  band 160-1500
+
+pair         Pearson    RMS dB
+LS1-MP1        0.486      7.06
+LS1-MP2        0.652      5.67
+LS1-MP3        0.458      4.62
+LS1-MP4        0.138      3.86
+LS2-MP1        0.495      4.62
+LS2-MP2        0.558      6.89
+LS2-MP3        0.476      2.82
+LS2-MP4        0.545      2.22
+LS3-MP1        0.078      4.14
+LS3-MP2        0.623      4.37
+LS3-MP3        0.583      2.07
+LS3-MP4        0.454      1.86
+LS4-MP1        0.686      6.46
+LS4-MP2        0.592      7.24
+LS4-MP3        0.618      7.26
+LS4-MP4        0.576      5.91
+mean           0.501

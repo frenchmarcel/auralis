@@ -1,0 +1,18 @@
+RS1 bench: TF differences between conditions (Pearson, Treble metric)
+scene=data_bras/1 Scene descriptions/RS1 single reflection (infinite plate)  fc=2000.0  window=0.03 s
+
+[Rigid-Absorbing]
+pair        combined        LF        HF    RMS dB
+LS1-MP1        0.689     0.747     0.670      4.92
+LS2-MP1        0.651     0.470     0.690      4.21
+LS3-MP1        0.634     0.772     0.609      3.52
+mean           0.658
+
+[Rigid-Diffuse]
+pair        combined        LF        HF    RMS dB
+LS2-MP4        0.668     0.762     0.603      5.46
+LS1-MP1        0.580     0.821     0.405      7.16
+LS2-MP1        0.549     0.659     0.469      6.47
+LS3-MP1        0.247     0.659     0.082      7.80
+mean           0.511
+

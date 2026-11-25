@@ -1,0 +1,69 @@
+[Auralis] conformal FDTD: volume +0.66 % (1.14 m3 recovered, 0.000 m3 orphaned), staircase area -> exact +101.6 % over 73458 faces (36.9 m2 true, 0.00 m2 dropped), subgrid x3, 5.2 s
+[bench] Rigid LS2-MP4: [gpu] 5335968 cells; TF 1771 pts
+[Auralis] conformal FDTD: volume +1.21 % (2.04 m3 recovered, 0.173 m3 orphaned), staircase area -> exact -11.1 % over 90791 faces (103.4 m2 true, 0.00 m2 dropped), subgrid x3, 12.3 s
+[Auralis] conformal: 8555 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS2-MP4: [gpu] 5222389 cells; TF 1771 pts
+[Auralis] conformal FDTD: volume +1.46 % (2.12 m3 recovered, 0.175 m3 orphaned), staircase area -> exact -8.7 % over 95431 faces (105.8 m2 true, 0.00 m2 dropped), subgrid x3, 17.3 s
+[Auralis] conformal: 8554 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS1-MP1: [gpu] 4507086 cells; TF 1771 pts
+[Auralis] conformal FDTD: volume +1.21 % (2.04 m3 recovered, 0.173 m3 orphaned), staircase area -> exact -11.1 % over 90791 faces (103.4 m2 true, 0.00 m2 dropped), subgrid x3, 15.8 s
+[Auralis] conformal: 8555 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS2-MP1: [gpu] 5222389 cells; TF 1771 pts
+[Auralis] conformal FDTD: volume +1.08 % (1.92 m3 recovered, 0.170 m3 orphaned), staircase area -> exact -13.9 % over 85288 faces (100.2 m2 true, 0.00 m2 dropped), subgrid x3, 11.6 s
+[Auralis] conformal: 8433 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS3-MP1: [gpu] 5522148 cells; TF 1771 pts
+[Auralis] conformal: subgrid (1827, 714, 618) too large (806 M > 450 M), falling back to factor 2 - set AURALIS_SUBGRID_MAX=<millions> to raise it if RAM allows (~4 bytes/subcell)
+[Auralis] conformal FDTD: volume +0.17 % (0.11 m3 recovered, 0.000 m3 orphaned), staircase area -> exact +101.0 % over 236160 faces (19.0 m2 true, 0.00 m2 dropped), subgrid x2, 17.2 s
+[bench] Rigid LS2-MP4: [gpu] 29739396 cells; TF 4030 pts
+[Auralis] conformal: subgrid (1827, 714, 618) too large (806 M > 450 M), falling back to factor 2 - set AURALIS_SUBGRID_MAX=<millions> to raise it if RAM allows (~4 bytes/subcell)
+[Auralis] conformal FDTD: volume +0.59 % (0.35 m3 recovered, 0.100 m3 orphaned), staircase area -> exact -4.3 % over 302514 faces (60.7 m2 true, 9.51 m2 dropped), subgrid x2, 39.0 s
+[Auralis] conformal: 13436 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS2-MP4: [gpu] 28765987 cells; TF 4030 pts
+[Auralis] conformal: subgrid (1938, 714, 471) too large (652 M > 450 M), falling back to factor 2 - set AURALIS_SUBGRID_MAX=<millions> to raise it if RAM allows (~4 bytes/subcell)
+[Auralis] conformal FDTD: volume +0.71 % (0.34 m3 recovered, 0.095 m3 orphaned), staircase area -> exact -3.0 % over 322189 faces (61.9 m2 true, 8.15 m2 dropped), subgrid x2, 37.1 s
+[Auralis] conformal: 13686 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS1-MP1: [gpu] 23049133 cells; TF 4030 pts
+[Auralis] conformal: subgrid (1827, 714, 618) too large (806 M > 450 M), falling back to factor 2 - set AURALIS_SUBGRID_MAX=<millions> to raise it if RAM allows (~4 bytes/subcell)
+[Auralis] conformal FDTD: volume +0.59 % (0.35 m3 recovered, 0.100 m3 orphaned), staircase area -> exact -4.3 % over 302514 faces (60.7 m2 true, 9.51 m2 dropped), subgrid x2, 42.5 s
+[Auralis] conformal: 13436 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS2-MP1: [gpu] 28765987 cells; TF 4030 pts
+[Auralis] conformal: subgrid (1680, 714, 732) too large (878 M > 450 M), falling back to factor 2 - set AURALIS_SUBGRID_MAX=<millions> to raise it if RAM allows (~4 bytes/subcell)
+[Auralis] conformal FDTD: volume +0.53 % (0.34 m3 recovered, 0.100 m3 orphaned), staircase area -> exact -7.8 % over 282424 faces (59.1 m2 true, 9.47 m2 dropped), subgrid x2, 47.7 s
+[Auralis] conformal: 13641 faces and 0 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[bench] Diffuse LS3-MP1: [gpu] 31438145 cells; TF 4030 pts
+[bench] Absorbing LS2-MP4: missing from the measurements of this condition, skipped
+[bench] LF_Rigid LS1-MP1: cached
+[bench] LF_Absorbing LS1-MP1: cached
+[bench] LF_Rigid LS2-MP1: cached
+[bench] LF_Absorbing LS2-MP1: cached
+[bench] LF_Rigid LS3-MP1: cached
+[bench] LF_Absorbing LS3-MP1: cached
+[bench] Absorbing LS2-MP4: missing from the measurements of this condition, skipped
+[bench] Rigid LS1-MP1: cached
+[bench] Absorbing LS1-MP1: cached
+[bench] Rigid LS2-MP1: cached
+[bench] Absorbing LS2-MP1: cached
+[bench] Rigid LS3-MP1: cached
+[bench] Absorbing LS3-MP1: cached
+[bench]   tier LF Rigid-Absorbing LS1-MP1: r=0.747 RMS 4.06 (160-700 Hz)
+[bench]   tier HF Rigid-Absorbing LS1-MP1: r=0.670 RMS 5.23 (700-2000 Hz)
+[bench] Rigid-Absorbing LS1-MP1: Pearson 0.689; RMS 4.92 dB (160-2000 Hz)
+[bench]   tier LF Rigid-Absorbing LS2-MP1: r=0.470 RMS 4.01 (160-700 Hz)
+[bench]   tier HF Rigid-Absorbing LS2-MP1: r=0.690 RMS 4.29 (700-2000 Hz)
+[bench] Rigid-Absorbing LS2-MP1: Pearson 0.651; RMS 4.21 dB (160-2000 Hz)
+[bench]   tier LF Rigid-Absorbing LS3-MP1: r=0.772 RMS 2.29 (160-700 Hz)
+[bench]   tier HF Rigid-Absorbing LS3-MP1: r=0.609 RMS 3.91 (700-2000 Hz)
+[bench] Rigid-Absorbing LS3-MP1: Pearson 0.634; RMS 3.52 dB (160-2000 Hz)
+[bench]   tier LF Rigid-Diffuse LS2-MP4: r=0.762 RMS 5.71 (160-700 Hz)
+[bench]   tier HF Rigid-Diffuse LS2-MP4: r=0.603 RMS 5.36 (700-2000 Hz)
+[bench] Rigid-Diffuse LS2-MP4: Pearson 0.668; RMS 5.46 dB (160-2000 Hz)
+[bench]   tier LF Rigid-Diffuse LS1-MP1: r=0.821 RMS 5.52 (160-700 Hz)
+[bench]   tier HF Rigid-Diffuse LS1-MP1: r=0.405 RMS 7.74 (700-2000 Hz)
+[bench] Rigid-Diffuse LS1-MP1: Pearson 0.580; RMS 7.16 dB (160-2000 Hz)
+[bench]   tier LF Rigid-Diffuse LS2-MP1: r=0.659 RMS 6.80 (160-700 Hz)
+[bench]   tier HF Rigid-Diffuse LS2-MP1: r=0.469 RMS 6.33 (700-2000 Hz)
+[bench] Rigid-Diffuse LS2-MP1: Pearson 0.549; RMS 6.47 dB (160-2000 Hz)
+[bench]   tier LF Rigid-Diffuse LS3-MP1: r=0.659 RMS 5.78 (160-700 Hz)
+[bench]   tier HF Rigid-Diffuse LS3-MP1: r=0.082 RMS 8.50 (700-2000 Hz)
+[bench] Rigid-Diffuse LS3-MP1: Pearson 0.247; RMS 7.80 dB (160-2000 Hz)
+[bench] report -> <scratch>/rs1/A/report.txt , <scratch>/rs1/A/report.csv

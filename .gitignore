@@ -1,0 +1,26 @@
+docs/_build/
+
+data_bras/
+data_hrtf/
+data_odeon/
+data_materials/
+
+# env, packages and assets
+webapp/.venv/
+webapp/web/node_modules/
+webapp/web/dist/
+webapp/assets/visual/
+webapp/assets/textures/
+__pycache__/
+*.pyc
+
+# generated outputs
+BRAS/CR2/listening_out/
+.pytest_cache/
+
+# compiled native libraries
+auralis/lib/
+
+# BRAS runs
+BRAS/*/run_*/**/*.wav
+BRAS/*/reference_run_*/**/*.wav

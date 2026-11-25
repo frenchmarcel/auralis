@@ -1,0 +1,21 @@
+RS5 bench: per-pair windowed TF, sim vs measurement (Pearson, Treble metric; single condition)
+scene=~/Téléchargements/1 Scene descriptions/05 diffraction (infinite wedge)  fc=1000.0  window=0.03 s  edge x=5.487 z=2.066  c=343.6
+
+pair         Pearson    RMS dB
+LS1-MP1        0.581      5.82
+LS1-MP2        0.382      6.46
+LS1-MP3        0.368      4.52
+LS1-MP4        0.525      2.80
+LS2-MP1        0.393      4.65
+LS2-MP2        0.325      5.92
+LS2-MP3        0.545      2.81
+LS2-MP4        0.337      2.72
+LS3-MP1        0.622      2.58
+LS3-MP2        0.374      5.56
+LS3-MP3        0.452      2.45
+LS3-MP4        0.486      2.15
+LS4-MP1        0.387      7.91
+LS4-MP2       -0.246     11.16
+LS4-MP3        0.346      8.17
+LS4-MP4        0.389      7.00
+mean           0.392

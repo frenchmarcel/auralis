@@ -1,0 +1,1039 @@
+{
+ "license_note": "Visual models: Poly Haven (CC0, polyhaven.com/license). Procedural objects: Auralis.",
+ "objects": [
+  {
+   "id": "WoodenChair_01",
+   "name": "Gothic high-back chair",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    0.45,
+    0.5,
+    0.9
+   ]
+  },
+  {
+   "id": "SchoolChair_01",
+   "name": "School chair",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    0.45,
+    0.5,
+    0.85
+   ]
+  },
+  {
+   "id": "dining_chair_02",
+   "name": "Dining chair",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    0.45,
+    0.5,
+    0.95
+   ]
+  },
+  {
+   "id": "painted_wooden_chair_01",
+   "name": "Painted wooden chair",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    0.45,
+    0.5,
+    0.9
+   ]
+  },
+  {
+   "id": "plastic_monobloc_chair_01",
+   "name": "Plastic chair",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_unoccupied_plastic",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_unoccupied_plastic",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    0.55,
+    0.55,
+    0.8
+   ]
+  },
+  {
+   "id": "Rockingchair_01",
+   "name": "Rocking chair",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    0.6,
+    0.9,
+    1.05
+   ]
+  },
+  {
+   "id": "painted_wooden_bench",
+   "name": "Wooden bench with backrest",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "chair",
+   "parts": {
+    "seat": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    },
+    "back": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.4
+    }
+   },
+   "dims": [
+    1.0,
+    0.35,
+    0.45
+   ]
+  },
+  {
+   "id": "bar_chair_round_01",
+   "name": "Bar stool",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:chairs_wooden",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    0.4,
+    0.4,
+    0.75
+   ]
+  },
+  {
+   "id": "metal_stool_01",
+   "name": "Metal stool",
+   "category": "Chairs",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "auralis:metal_panel",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    0.35,
+    0.35,
+    0.5
+   ]
+  },
+  {
+   "id": "ArmChair_01",
+   "name": "Armchair (fabric)",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    0.8,
+    0.85,
+    0.95
+   ]
+  },
+  {
+   "id": "GreenChair_01",
+   "name": "Upholstered chair",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    0.6,
+    0.6,
+    1.0
+   ]
+  },
+  {
+   "id": "mid_century_lounge_chair",
+   "name": "Lounge chair (leather)",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_leather",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    0.85,
+    0.85,
+    0.85
+   ]
+  },
+  {
+   "id": "modern_arm_chair_01",
+   "name": "Modern armchair (leather)",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_leather",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    0.75,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "Sofa_01",
+   "name": "Sofa",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    2.0,
+    0.9,
+    0.85
+   ]
+  },
+  {
+   "id": "sofa_02",
+   "name": "Sofa (modern)",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    2.0,
+    0.9,
+    0.8
+   ]
+  },
+  {
+   "id": "sofa_03",
+   "name": "Sofa (large)",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    2.3,
+    0.95,
+    0.85
+   ]
+  },
+  {
+   "id": "painted_wooden_sofa",
+   "name": "Wooden sofa with cushions",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    1.8,
+    0.8,
+    0.9
+   ]
+  },
+  {
+   "id": "vintage_day_bed",
+   "name": "Day bed",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "upholstered",
+   "parts": {
+    "upholstery": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    1.9,
+    0.8,
+    0.8
+   ]
+  },
+  {
+   "id": "Ottoman_01",
+   "name": "Ottoman",
+   "category": "Armchairs & sofas",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:chairs_upholstered_cloth",
+     "scattering": 0.5
+    }
+   },
+   "dims": [
+    0.6,
+    0.6,
+    0.45
+   ]
+  },
+  {
+   "id": "WoodenTable_01",
+   "name": "Low wooden table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.6,
+    0.9,
+    0.75
+   ]
+  },
+  {
+   "id": "WoodenTable_02",
+   "name": "Small side table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    2.0,
+    0.9,
+    0.75
+   ]
+  },
+  {
+   "id": "dining_table",
+   "name": "Dining table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.8,
+    0.95,
+    0.76
+   ]
+  },
+  {
+   "id": "painted_wooden_table",
+   "name": "Painted table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.4,
+    0.8,
+    0.75
+   ]
+  },
+  {
+   "id": "round_wooden_table_01",
+   "name": "Round table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.0,
+    1.0,
+    0.75
+   ]
+  },
+  {
+   "id": "CoffeeTable_01",
+   "name": "Coffee table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.1,
+    0.6,
+    0.45
+   ]
+  },
+  {
+   "id": "coffee_table_round_01",
+   "name": "Round coffee table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    0.8,
+    0.8,
+    0.45
+   ]
+  },
+  {
+   "id": "modern_coffee_table_01",
+   "name": "Modern coffee table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.2,
+    0.6,
+    0.4
+   ]
+  },
+  {
+   "id": "side_table_01",
+   "name": "Side table",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    0.5,
+    0.5,
+    0.6
+   ]
+  },
+  {
+   "id": "SchoolDesk_01",
+   "name": "School desk",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.2,
+    0.6,
+    0.75
+   ]
+  },
+  {
+   "id": "metal_office_desk",
+   "name": "Office desk (metal)",
+   "category": "Tables & desks",
+   "source": "polyhaven",
+   "proxy": "plane_top",
+   "parts": {
+    "top": {
+     "material": "auralis:metal_panel",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.5,
+    0.75,
+    0.75
+   ]
+  },
+  {
+   "id": "Shelf_01",
+   "name": "Bookshelf with books",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.7
+    }
+   },
+   "dims": [
+    1.0,
+    0.35,
+    1.9
+   ]
+  },
+  {
+   "id": "wooden_bookshelf_worn",
+   "name": "Wooden bookshelf",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    1.0,
+    0.35,
+    1.9
+   ]
+  },
+  {
+   "id": "steel_frame_shelves_01",
+   "name": "Steel shelves",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "auralis:metal_panel",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    1.0,
+    0.5,
+    1.8
+   ],
+   "visual_scale": 0.1,
+   "note": "Source model is authored at 10x scale (21 m tall): corrected by 0.1."
+  },
+  {
+   "id": "painted_wooden_cabinet",
+   "name": "Painted cabinet",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.0,
+    0.5,
+    1.8
+   ]
+  },
+  {
+   "id": "modern_wooden_cabinet",
+   "name": "Wooden cabinet",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.2,
+    0.45,
+    0.8
+   ]
+  },
+  {
+   "id": "drawer_cabinet",
+   "name": "Chest of drawers",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.0,
+    0.5,
+    0.9
+   ]
+  },
+  {
+   "id": "vintage_cabinet_01",
+   "name": "Vintage cabinet",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.0,
+    0.5,
+    1.8
+   ]
+  },
+  {
+   "id": "ClassicNightstand_01",
+   "name": "Nightstand",
+   "category": "Storage",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    0.5,
+    0.4,
+    0.6
+   ]
+  },
+  {
+   "id": "GothicBed_01",
+   "name": "Bed (double)",
+   "category": "Beds",
+   "source": "polyhaven",
+   "proxy": "bed",
+   "parts": {
+    "mattress": {
+     "material": "pyroomacoustics:chairs_heavy_upholstered",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    1.8,
+    2.2,
+    1.3
+   ]
+  },
+  {
+   "id": "old_bed_frame",
+   "name": "Bed frame (single)",
+   "category": "Beds",
+   "source": "polyhaven",
+   "proxy": "bed",
+   "parts": {
+    "mattress": {
+     "material": "pyroomacoustics:chairs_heavy_upholstered",
+     "scattering": 0.6
+    }
+   },
+   "dims": [
+    1.0,
+    2.0,
+    1.0
+   ]
+  },
+  {
+   "id": "chinese_screen_panels",
+   "name": "Folding screen",
+   "category": "Partitions & screens",
+   "source": "polyhaven",
+   "proxy": "vertical_plane",
+   "parts": {
+    "surface": {
+     "material": "pyroomacoustics:wooden_lining",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.8,
+    0.05,
+    1.8
+   ]
+  },
+  {
+   "id": "Television_01",
+   "name": "Television",
+   "category": "Electronics",
+   "source": "polyhaven",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "auralis:glass_heavy",
+     "scattering": 0.1
+    }
+   },
+   "dims": [
+    1.0,
+    0.1,
+    0.6
+   ]
+  },
+  {
+   "id": "potted_plant_01",
+   "name": "Potted plant",
+   "category": "Decoration",
+   "source": "polyhaven",
+   "proxy": "none",
+   "parts": {},
+   "dims": [
+    0.5,
+    0.5,
+    1.0
+   ]
+  },
+  {
+   "id": "potted_plant_02",
+   "name": "Potted plant (tall)",
+   "category": "Decoration",
+   "source": "polyhaven",
+   "proxy": "none",
+   "parts": {},
+   "dims": [
+    0.5,
+    0.5,
+    1.4
+   ]
+  },
+  {
+   "id": "desk_lamp_arm_01",
+   "name": "Desk lamp",
+   "category": "Decoration",
+   "source": "polyhaven",
+   "proxy": "none",
+   "parts": {},
+   "dims": [
+    0.3,
+    0.3,
+    0.5
+   ]
+  },
+  {
+   "id": "curtain",
+   "name": "Curtain (folded)",
+   "category": "Acoustic treatment",
+   "source": "procedural",
+   "proxy": "vertical_plane",
+   "parts": {
+    "surface": {
+     "material": "pyroomacoustics:curtains_fabric_folded",
+     "scattering": 0.5
+    }
+   },
+   "dims": [
+    2.0,
+    0.15,
+    2.5
+   ],
+   "note": "Place it ~15 cm in front of the wall, as in the measurement."
+  },
+  {
+   "id": "absorber_panel",
+   "name": "Absorber panel (wall)",
+   "category": "Acoustic treatment",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:panel_fabric_covered_8pcf",
+     "scattering": 0.2
+    }
+   },
+   "dims": [
+    1.2,
+    0.05,
+    0.6
+   ],
+   "note": ""
+  },
+  {
+   "id": "ceiling_cloud",
+   "name": "Ceiling cloud",
+   "category": "Acoustic treatment",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:panel_fabric_covered_6pcf",
+     "scattering": 0.2
+    }
+   },
+   "dims": [
+    1.2,
+    1.2,
+    0.05
+   ],
+   "note": "Raise it to the ceiling height with Z."
+  },
+  {
+   "id": "bass_trap",
+   "name": "Corner bass trap",
+   "category": "Acoustic treatment",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:rockwool_50mm_80kgm3",
+     "scattering": 0.2
+    }
+   },
+   "dims": [
+    0.6,
+    0.6,
+    2.0
+   ],
+   "note": ""
+  },
+  {
+   "id": "diffuser",
+   "name": "Diffuser (QRD)",
+   "category": "Acoustic treatment",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.9
+    }
+   },
+   "dims": [
+    0.6,
+    0.2,
+    0.6
+   ],
+   "note": ""
+  },
+  {
+   "id": "audience_block",
+   "name": "Audience area",
+   "category": "Audience & stage",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:audience_upholstered_chairs_2",
+     "scattering": 0.7
+    }
+   },
+   "dims": [
+    6.0,
+    4.0,
+    1.0
+   ],
+   "note": "Standard practice: a 1 m high block over the seating area."
+  },
+  {
+   "id": "orchestra",
+   "name": "Orchestra on podium",
+   "category": "Audience & stage",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:orchestra_1.5_m2",
+     "scattering": 0.7
+    }
+   },
+   "dims": [
+    8.0,
+    5.0,
+    1.2
+   ],
+   "note": ""
+  },
+  {
+   "id": "stage_riser",
+   "name": "Stage / riser",
+   "category": "Audience & stage",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:stage_floor",
+     "scattering": 0.2
+    }
+   },
+   "dims": [
+    4.0,
+    3.0,
+    0.4
+   ],
+   "note": ""
+  },
+  {
+   "id": "piano_upright",
+   "name": "Upright piano",
+   "category": "Instruments",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.5,
+    0.6,
+    1.25
+   ],
+   "note": ""
+  },
+  {
+   "id": "piano_grand",
+   "name": "Grand piano (closed lid)",
+   "category": "Instruments",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "pyroomacoustics:wood_16mm",
+     "scattering": 0.3
+    }
+   },
+   "dims": [
+    1.5,
+    2.1,
+    1.0
+   ],
+   "note": ""
+  },
+  {
+   "id": "column",
+   "name": "Column",
+   "category": "Structure",
+   "source": "procedural",
+   "proxy": "box",
+   "parts": {
+    "body": {
+     "material": "auralis:concrete",
+     "scattering": 0.2
+    }
+   },
+   "dims": [
+    0.4,
+    0.4,
+    3.0
+   ],
+   "note": ""
+  }
+ ]
+}

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real or simulated</title>
+<style>
+  :root { --bg:#f6f5f2; --card:#ffffff; --ink:#1d1d1b; --mute:#6b6a66; --line:#dddad3;
+          --accent:#2f5d8a; --accent-ink:#ffffff; --on:#e7eef6; --good:#2e7d4f; --bad:#a6402f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#151514; --card:#1f1f1d; --ink:#ecebe6; --mute:#a3a29c; --line:#34332f;
+            --accent:#7aa7d6; --accent-ink:#10161d; --on:#22303d; --good:#6cc28f; --bad:#e08b78; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 0 0 12px; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--mute); margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+          padding: 20px; margin-bottom: 16px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+           border-radius: 10px; padding: 12px 18px; cursor: pointer; min-width: 64px; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.sel { background: var(--on); border-color: var(--accent); font-weight: 600; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .big button.slot { font-size: 20px; min-width: 120px; padding: 18px; }
+  .meta { color: var(--mute); font-size: 14px; }
+  .prog { display: inline-block; font-size: 13px; padding: 2px 10px; border-radius: 999px;
+          border: 1px solid var(--line); color: var(--mute); }
+  .bar { height: 4px; background: var(--line); border-radius: 2px; margin: 8px 0 16px; }
+  .bar > div { height: 100%; background: var(--accent); border-radius: 2px; width: 0; }
+  textarea { width: 100%; min-height: 90px; font: inherit; padding: 10px; border-radius: 10px;
+             border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  .ok { color: var(--good); font-weight: 600; } .ko { color: var(--bad); font-weight: 600; }
+  .verdict { font-size: 18px; font-weight: 600; margin: 4px 0 12px; }
+  kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px;
+        font-size: 13px; }
+  .hidden { display: none; }
+  .chip { padding: 8px 12px; min-width: 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Real or simulated</h1>
+  <p class="sub">CR2 seminar room (RWTH Aachen, BRAS database). Responses measured with the FABIAN
+    artificial head are compared with the Auralis simulation of the same positions, with the same head.</p>
+  <p class="meta" id="fitnote"></p>
+
+  <section id="intro" class="card">
+    <h2>Before you start</h2>
+    <p>Put on <b>headphones</b> and sit in a quiet place. The test takes 15 to 20 minutes.</p>
+    <p>First set the volume to a comfortable level. Then <b>do not change it</b> until the end.</p>
+    <div class="row" id="vol-row"><button id="vol-stop">Stop</button></div>
+    <p class="meta" id="prog-note"></p>
+    <p class="meta" id="credit"></p>
+    <div class="row"><button class="primary" id="start">Start part 1</button></div>
+  </section>
+
+  <section id="p2intro" class="card hidden">
+    <h2>Part 2: find X</h2>
+    <p>This time you know which is which: <b>A is real</b> and <b>B is simulated</b>.
+      X is one of the two, picked at random. Compare them as often as you like, then say whether X is A or B.</p>
+    <p class="meta">If you hear no difference, answer at random anyway. This is expected.
+      After each answer, you can note what sets B (simulated) apart from A (real). This is
+      optional, but it shows what to improve in the simulation.</p>
+    <div class="row"><button class="primary" id="start2">Start part 2</button></div>
+  </section>
+
+  <section id="trial" class="card hidden">
+    <div class="meta" id="t-head"></div>
+    <div class="bar"><div id="t-bar"></div></div>
+    <h2 id="t-title"></h2>
+    <p id="t-help" class="meta"></p>
+    <div class="row big" id="t-slots"></div>
+    <div class="row"><button id="t-stop">Stop</button>
+      <button id="t-dry" title="The recording without any room, the same in both ears. It is never an answer.">Dry sound (no room)</button></div>
+    <p class="meta" id="t-keys"></p>
+    <div class="row" id="t-answers"></div>
+    <div id="t-tags" class="hidden">
+      <p><b>Compared with A (real), B (simulated) has…</b> <span class="meta">Optional. You can pick
+        several. You can keep listening.</span></p>
+      <div class="row" id="t-chips"></div>
+      <div class="row"><button class="primary" id="t-next">Next trial</button></div>
+    </div>
+  </section>
+
+  <section id="end" class="card hidden">
+    <h2>Results</h2>
+    <div id="r-summary"></div>
+    <div id="r-tags"></div>
+    <p style="margin-top:16px"><b>What gave it away?</b> Timbre, reverberation,
+      position of the sounds, width, hiss… Even if you answered at random, describe what you heard.</p>
+    <textarea id="r-comment" placeholder="Your impressions"></textarea>
+    <div class="row"><button class="primary" id="r-save">Download the results</button></div>
+    <details><summary class="meta">Trial details</summary><div id="r-detail"></div></details>
+  </section>
+</main>
+<script>
+const AUDIO = __AUDIO__;
+const META = __META__;
+const PROGS = META.programs || [{ id: "quartet", label: "String quartet" }, { id: "noise", label: "Noise pulse" }];
+const LABEL = Object.fromEntries(PROGS.map(p => [p.id, p.label]));
+const [N1, N2] = META.trials || [5, 6];
+const TAGS = ["more reverberation", "less reverberation", "more bass", "less bass",
+  "more treble", "less treble", "placed elsewhere", "blurrier or wider", "different attack",
+  "louder", "softer", "something else"];
+let ctx = null, buffers = {}, voices = [], active = 0;
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+async function ensureAudio() {
+  if (ctx) { if (ctx.state === "suspended") await ctx.resume(); return; }
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  for (const [k, b64] of Object.entries(AUDIO)) {
+    const bin = atob(b64), u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    buffers[k] = await ctx.decodeAudioData(u8.buffer);
+  }
+}
+function stop() {
+  for (const v of voices) { try { v.src.stop(); } catch (e) {} }
+  voices = [];
+}
+// all versions run in sync, looped; switching crossfades in 15 ms at the same instant
+function play(keys, which) {
+  stop();
+  const t0 = ctx.currentTime + 0.06;
+  voices = keys.map((k, i) => {
+    const src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = buffers[k]; src.loop = true;
+    g.gain.value = i === which ? 1 : 0;
+    src.connect(g).connect(ctx.destination); src.start(t0);
+    return { src, g };
+  });
+  active = which;
+}
+function select(i) {
+  if (!voices.length) return false;
+  const t = ctx.currentTime;
+  voices.forEach((v, j) => {
+    v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t);
+    v.g.gain.linearRampToValueAtTime(j === i ? 1 : 0, t + 0.015);
+  });
+  active = i; return true;
+}
+function binomUpper(k, n) {               // P(X >= k), X ~ B(n, 1/2)
+  let c = 1, s = 0;
+  for (let i = 0; i <= n; i++) { if (i >= k) s += c; c = c * (n - i) / (i + 1); }
+  return s / Math.pow(2, n);
+}
+function binomLower(k, n) { return 1 - binomUpper(k + 1, n); }
+
+const $ = id => document.getElementById(id);
+const show = id => ["intro", "p2intro", "trial", "end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+
+// part 1: which one is real (2AFC); part 2: ABX with A = real, B = simulated
+const repeat = (n) => PROGS.flatMap(p => Array.from({ length: n }, () => p.id));
+const plan1 = shuffle(repeat(N1).map(prog => ({ part: 1, prog, realSlot: Math.random() < 0.5 ? 0 : 1 })));
+const plan2 = shuffle(repeat(N2).map(prog => ({ part: 2, prog, xIsReal: Math.random() < 0.5 })));
+const results = [];
+let plan = plan1, idx = 0, heard = new Set(), tStart = 0;
+
+function slotKeys(t) {
+  if (t.part === 1) return t.realSlot === 0 ? [t.prog + "_real", t.prog + "_sim"] : [t.prog + "_sim", t.prog + "_real"];
+  return [t.prog + "_real", t.prog + "_sim", t.prog + (t.xIsReal ? "_real" : "_sim")];
+}
+function renderTrial() {
+  const t = plan[idx], n = plan.length;
+  heard = new Set(); tStart = performance.now();
+  $("t-head").textContent = "Part " + t.part + " · trial " + (idx + 1) + " / " + n;
+  $("t-bar").style.width = (100 * idx / n) + "%";
+  $("t-title").innerHTML = (t.part === 1 ? "Which one is real?" : "Is X A or B?") +
+    ' <span class="prog">' + LABEL[t.prog] + "</span>";
+  $("t-help").textContent = t.part === 1
+    ? "One is the real room, the other is the simulation. Listen to both and switch as often as you like."
+    : "A = real, B = simulated. X is one of the two.";
+  const names = t.part === 1 ? ["1", "2"] : ["A · real", "B · simulated", "X"];
+  const keys = t.part === 1 ? ["1", "2"] : ["a", "b", "x"];
+  $("t-keys").innerHTML = "Keys: " + keys.map(k => "<kbd>" + k + "</kbd>").join(" ") +
+    " to switch, <kbd>s</kbd> for the dry sound, <kbd>space</kbd> to stop. The dry sound is a reference. " +
+    "It is the source without the room, never an answer.";
+  const slots = $("t-slots"); slots.innerHTML = "";
+  names.forEach((nm, i) => {
+    const b = document.createElement("button"); b.className = "slot"; b.textContent = nm;
+    b.onclick = () => choose(i); slots.appendChild(b);
+  });
+  const ans = $("t-answers"); ans.innerHTML = ""; ans.classList.remove("hidden");
+  $("t-tags").classList.add("hidden");
+  const opts = t.part === 1 ? [["1 is real", 0], ["2 is real", 1]] : [["X = A", "A"], ["X = B", "B"]];
+  opts.forEach(([txt, v]) => {
+    const b = document.createElement("button"); b.className = "primary"; b.textContent = txt; b.disabled = true;
+    b.onclick = () => answer(v); ans.appendChild(b);
+  });
+  stop(); highlight(-1);
+}
+function highlight(i) {
+  [...$("t-slots").children].forEach((b, j) => b.classList.toggle("sel", j === i));
+  $("t-dry").classList.remove("sel");
+}
+// the dry recording runs in the same synchronous group, after the slots
+const groupKeys = t => slotKeys(t).concat([t.prog + "_dry"]);
+async function chooseDry() {
+  await ensureAudio();
+  const keys = groupKeys(plan[idx]);
+  if (!select(keys.length - 1)) play(keys, keys.length - 1);
+  highlight(-1); $("t-dry").classList.add("sel");
+}
+async function choose(i) {
+  await ensureAudio();
+  const keys = groupKeys(plan[idx]);
+  if (!select(i)) play(keys, i);
+  highlight(i); heard.add(i);
+  const need = plan[idx].part === 1 ? 2 : 3;
+  [...$("t-answers").children].forEach(b => b.disabled = heard.size < Math.min(need, 2) || (plan[idx].part === 2 && !heard.has(2)));
+}
+function answer(v) {
+  const t = plan[idx];
+  const correct = t.part === 1 ? v === t.realSlot : (v === "A") === t.xIsReal;
+  results.push({ part: t.part, prog: t.prog, correct, seconds: Math.round((performance.now() - tStart) / 100) / 10,
+                 truth: t.part === 1 ? "real=" + (t.realSlot + 1) : (t.xIsReal ? "X=A" : "X=B"),
+                 answer: t.part === 1 ? "real=" + (v + 1) : "X=" + v });
+  if (t.part === 2) { askTags(); return; }
+  next();
+}
+function askTags() {
+  $("t-answers").classList.add("hidden");
+  const box = $("t-chips"); box.innerHTML = "";
+  TAGS.forEach(tag => {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = tag;
+    b.onclick = () => b.classList.toggle("sel"); box.appendChild(b);
+  });
+  $("t-tags").classList.remove("hidden");
+}
+function next() {
+  stop(); idx++;
+  if (idx < plan.length) { renderTrial(); return; }
+  if (plan === plan1) { show("p2intro"); return; }
+  finish();
+}
+$("t-next").onclick = () => {
+  results[results.length - 1].tags = [...$("t-chips").children].filter(b => b.classList.contains("sel")).map(b => b.textContent);
+  next();
+};
+function verdict(part, k, n) {
+  if (part === 1) {
+    const pHi = binomUpper(k, n), pLo = binomLower(k, n), p = Math.min(1, 2 * Math.min(pHi, pLo));
+    let v = "No better than chance: on these trials, the simulation passes for the real room.";
+    if (p < 0.05 && k > n / 2) v = "You pick the real room more often than chance.";
+    if (p < 0.05 && k < n / 2) v = "You take the simulation for the real room more often than chance.";
+    return [v, "two-sided p = " + p.toFixed(3)];
+  }
+  const p = binomUpper(k, n);
+  return [p < 0.05 ? "Audible difference: you can tell the real room from the simulation."
+                   : "No difference shown on these trials (12 trials only detect a clear difference).",
+          "one-sided p = " + p.toFixed(3)];
+}
+function finish() {
+  show("end");
+  let html = "";
+  for (const part of [1, 2]) {
+    const r = results.filter(x => x.part === part), k = r.filter(x => x.correct).length;
+    const [v, p] = verdict(part, k, r.length);
+    const by = PROGS.map(p => p.id).map(pg => {
+      const q = r.filter(x => x.prog === pg); return LABEL[pg] + " " + q.filter(x => x.correct).length + "/" + q.length;
+    }).join(" · ");
+    html += "<p><b>Part " + part + (part === 1 ? " (which one is real)" : " (ABX)") + ": " + k + " / " + r.length +
+      " correct answers</b><br><span class='meta'>" + by + " · " + p + "</span></p><p class='verdict'>" + v + "</p>";
+  }
+  $("r-summary").innerHTML = html;
+  const tagged = results.filter(r => r.tags && r.tags.length);
+  if (tagged.length) {
+    const rows = PROGS.map(p => {
+      const counts = {};
+      tagged.filter(r => r.prog === p.id).forEach(r => r.tags.forEach(g => counts[g] = (counts[g] || 0) + 1));
+      const txt = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([g, c]) => g + " (" + c + ")").join(", ");
+      return "<tr><td>" + p.label + "</td><td>" + (txt || "–") + "</td></tr>";
+    }).join("");
+    $("r-tags").innerHTML = "<p><b>What you noted about B (simulated) compared with A (real)</b></p><table>" + rows + "</table>";
+  }
+  $("r-detail").innerHTML = "<table><tr><th>Part</th><th>Sound</th><th>Truth</th><th>Answer</th><th>Time</th><th></th><th>Notes</th></tr>" +
+    results.map(r => "<tr><td>" + r.part + "</td><td>" + LABEL[r.prog] + "</td><td>" + r.truth + "</td><td>" + r.answer +
+      "</td><td>" + r.seconds + " s</td><td class='" + (r.correct ? "ok'>correct" : "ko'>wrong") + "</td><td>" +
+      (r.tags || []).join(", ") + "</td></tr>").join("") + "</table>";
+}
+if (META.session_fit_added_alpha) {
+  $("fitnote").textContent = "The reverberation of the simulation is matched to the one measured in this session " +
+    "(absorption added uniformly, BRAS 'fitted' protocol). The test judges the rendering " +
+    "(ears, timbre, space, early reflections), not the prediction of the reverberation time.";
+}
+PROGS.slice().reverse().forEach(p => {
+  const b = document.createElement("button"); b.textContent = "Set the volume: " + p.label.toLowerCase();
+  b.onclick = async () => { await ensureAudio(); play([p.id + "_real"], 0); };
+  $("vol-row").prepend(b);
+});
+$("prog-note").textContent = "The test sounds, played in a loop: " + PROGS.map(p => p.label.toLowerCase()).join(", ") + ".";
+$("credit").textContent = META.credit || "";
+$("vol-stop").onclick = stop;
+$("start").onclick = async () => { await ensureAudio(); stop(); plan = plan1; idx = 0; show("trial"); renderTrial(); };
+$("start2").onclick = () => { plan = plan2; idx = 0; show("trial"); renderTrial(); };
+$("t-stop").onclick = () => { stop(); highlight(-1); };
+$("t-dry").onclick = chooseDry;
+$("r-save").onclick = () => {
+  const blob = new Blob([JSON.stringify({ meta: META, finished: new Date().toISOString(),
+    comment: $("r-comment").value, results }, null, 1)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "cr2_listening_" + new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-") + ".json"; a.click();
+};
+document.addEventListener("keydown", e => {
+  if ($("trial").classList.contains("hidden") || e.target.tagName === "TEXTAREA") return;
+  // "&" and "é" are the unshifted 1 and 2 keys of an AZERTY keyboard
+  const t = plan[idx], map = t.part === 1 ? { "1": 0, "2": 1, "&": 0, "é": 1 } : { a: 0, b: 1, x: 2, q: 0 };
+  if (e.key === " ") { e.preventDefault(); stop(); highlight(-1); return; }
+  if (e.key.toLowerCase() === "s") { chooseDry(); return; }
+  const i = map[e.key.toLowerCase()];
+  if (i !== undefined) choose(i);
+});
+</script>
+</body>
+</html>

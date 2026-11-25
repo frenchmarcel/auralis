@@ -1,0 +1,131 @@
+[Auralis] material 'mat_CR1_absorber': alpha-only fit kept: no physical model explains alpha (best: screen, rms 0.050, up to 1 kHz 0.052)
+[Auralis] material 'mat_CR1_concrete': alpha-only fit kept: hard surface (alpha <= 0.08): too little absorption to identify a physical model
+[Auralis] material 'mat_CR1_paintedConcrete': alpha-only fit kept: hard surface (alpha <= 0.02): too little absorption to identify a physical model
+[Auralis] material 'mat_CR1_tablesEquipment': alpha-only fit kept: no physical model explains alpha (best: screen, rms 0.054, up to 1 kHz 0.068)
+[Auralis] sub-cell opening: pocket of 93.9 m3 joined to the air through gaps narrower than the cell, conductance 15.36 faces (h = dx/10: 12.13, dx/5: 8.90), 25103 links between 3168 and 439 mouth cells, CG 145/76 iterations, flux balance 4.6e-05, 84.7 s
+[Auralis] conformal FDTD: volume +9.61 % (19.79 m3 recovered, 0.703 m3 orphaned), staircase area -> exact -6.3 % over 64750 faces (379.0 m2 true, 19.58 m2 dropped), subgrid x3, 0.9 s
+[Auralis] conformal: 1049 faces and 5 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[Auralis] WARNING: wall filter of 'mat_CR1_absorber' was ACTIVE on the grid (discrete admittance -2.4e-04 at 1 Hz: it creates energy, the slow boundary mode of near-rigid rooms): g_inf raised by 2.5e-04 (alpha at 125 Hz 0.0804 -> 0.0821).
+[Auralis] WARNING: wall filter of 'mat_CR1_tablesEquipment' was ACTIVE on the grid (discrete admittance -1.9e-04 at 1 Hz: it creates energy, the slow boundary mode of near-rigid rooms): g_inf raised by 2.0e-04 (alpha at 125 Hz 0.0802 -> 0.0815).
+[Auralis] note: near-rigid materials in the wave band (low-frequency alpha < 0.03): mat_CR1_paintedConcrete. Their wall filters are checked for passivity on the grid (repairs are reported above); the watchdog still stops a run cleanly if a boundary mode grows. Realistic values (furnished room: 0.05-0.15) also sound truer.
+[Auralis] wave band: spectrum of the source 'batch-src' from its directivity table, [0.91, 0.28, 0.27, 0.27] dB (125 Hz-1 kHz)
+[Auralis] low band precomputed: source 'batch-src', 2 receivers (6 probes) in ONE grid [gpu, 549405 cells, crossover 352 Hz, 95.2 s]
+[Auralis] sub-cell openings: the links of the same joined air (a source on the other side) are reused
+[Auralis] sub-cell opening: pocket of 93.9 m3 joined to the air through gaps narrower than the cell, conductance 15.36 faces (h = dx/10: 12.13, dx/5: 8.90), 25103 links between 3168 and 439 mouth cells, CG 145/76 iterations, flux balance 4.6e-05, 84.7 s
+[Auralis] conformal FDTD: volume +9.61 % (19.79 m3 recovered, 0.703 m3 orphaned), staircase area -> exact -6.3 % over 64750 faces (379.0 m2 true, 19.58 m2 dropped), subgrid x3, 0.0 s (reused: same grid as the previous run)
+[Auralis] conformal: 1049 faces and 5 volumes capped (w<=3, phi<=4) -- very oblique corners.
+[Auralis] WARNING: wall filter of 'mat_CR1_absorber' was ACTIVE on the grid (discrete admittance -2.4e-04 at 1 Hz: it creates energy, the slow boundary mode of near-rigid rooms): g_inf raised by 2.5e-04 (alpha at 125 Hz 0.0804 -> 0.0821).
+[Auralis] WARNING: wall filter of 'mat_CR1_tablesEquipment' was ACTIVE on the grid (discrete admittance -1.9e-04 at 1 Hz: it creates energy, the slow boundary mode of near-rigid rooms): g_inf raised by 2.0e-04 (alpha at 125 Hz 0.0802 -> 0.0815).
+[Auralis] note: near-rigid materials in the wave band (low-frequency alpha < 0.03): mat_CR1_paintedConcrete. Their wall filters are checked for passivity on the grid (repairs are reported above); the watchdog still stops a run cleanly if a boundary mode grows. Realistic values (furnished room: 0.05-0.15) also sound truer.
+[Auralis] wave band: spectrum of the source 'batch-src' from its directivity table, [0.91, 0.28, 0.27, 0.27] dB (125 Hz-1 kHz)
+[Auralis] low band precomputed: source 'batch-src', 2 receivers (6 probes) in ONE grid [gpu, 549405 cells, crossover 352 Hz, 2.9 s]
+BRAS bench: cr1_door1_dodecahedron_fitted31_dir
+298 triangles, 4 materials, engine=auto, fs=44100
+bounding box: 12.35 x 9.25 x 2.77 m  (z: 0.00 to 2.77)
+
+[LS1-MP3]
+band    :     125     250     500      1k      2k      4k      8k
+T20  sim :   9.757   7.424   5.648   5.583   5.045   3.246   1.784
+T20  ref :   7.204   5.226   4.481   4.638   3.995   2.745   1.391
+T30  sim :   8.845   7.333   5.982   5.582   5.051   3.397   2.255
+T30  ref :   7.368   5.415   4.345   4.362   3.680   2.660   1.537
+EDT  sim :   9.360   7.195   5.824   5.768   4.907   2.957   1.399
+EDT  ref :   6.470   5.110   4.043   4.480   4.098   2.534   1.250
+C50  sim : -11.204  -6.752  -6.554  -6.547  -7.400  -5.435  -2.550
+C50  ref : -11.923  -7.331  -5.640  -8.485  -7.719  -4.056   0.419
+C80  sim :  -8.586  -4.807  -5.289  -5.067  -5.275  -2.982   0.872
+C80  ref :  -9.703  -5.074  -3.439  -5.954  -5.979  -2.171   2.796
+D50  sim :   0.070   0.174   0.181   0.181   0.154   0.222   0.357
+D50  ref :   0.060   0.156   0.214   0.124   0.145   0.282   0.524
+Ts   sim : 678.598 473.118 390.320 383.801 341.686 208.449 104.623
+Ts   ref : 451.275 338.879 265.424 329.877 301.239 175.824  74.872
+D80 sim :   0.122   0.248   0.228   0.237   0.229   0.335   0.550
+D80 ref :   0.097   0.237   0.312   0.202   0.202   0.378   0.656
+Lvl sim :  -14.99  -13.05  -11.27   -8.15   -8.35   -5.80   -5.50
+Lvl ref :  -14.84  -12.17   -8.59   -7.46  -12.05   -6.44   -5.24
+dT30    :   1.477   1.918   1.636   1.219   1.371   0.737   0.719
+dC50    :   0.719   0.579  -0.915   1.938   0.318  -1.380  -2.969
+dTs     : 227.324 134.239 124.896  53.924  40.447  32.625  29.750
+dLvl    :   -0.15   -0.87   -2.68   -0.69   +3.69   +0.64   -0.26
+
+[LS1-MP4]
+band    :     125     250     500      1k      2k      4k      8k
+T20  sim :  10.152   7.620   5.699   5.595   4.979   3.271   1.735
+T20  ref :   6.768   5.159   4.195   4.510   4.089   2.726   1.474
+T30  sim :   9.344   7.411   6.006   5.624   5.067   3.368   2.224
+T30  ref :   6.933   5.317   4.217   4.296   3.708   2.649   1.677
+EDT  sim :  10.148   7.190   6.016   5.737   4.994   2.934   1.525
+EDT  ref :   5.870   5.217   4.378   4.521   4.133   2.660   1.324
+C50  sim : -12.636  -9.123  -4.326  -4.767  -4.841  -2.786   1.479
+C50  ref :  -7.939 -10.169  -7.285  -8.664  -8.169  -5.740  -1.720
+C80  sim :  -9.724  -7.469  -3.571  -3.863  -4.069  -1.408   3.050
+C80  ref :  -5.981  -5.964  -5.155  -6.661  -6.053  -3.488   1.368
+D50  sim :   0.052   0.109   0.270   0.250   0.247   0.345   0.584
+D50  ref :   0.138   0.088   0.157   0.120   0.132   0.211   0.402
+Ts   sim : 746.774 494.385 351.832 354.456 316.444 184.088  77.666
+Ts   ref : 412.446 377.901 319.835 336.426 307.431 201.464  94.658
+D80 sim :   0.096   0.152   0.305   0.291   0.282   0.420   0.669
+D80 ref :   0.201   0.202   0.234   0.177   0.199   0.309   0.578
+Lvl sim :  -13.38  -13.81  -11.56   -8.44   -8.71   -5.93   -5.10
+Lvl ref :  -15.32  -10.70   -8.31   -6.52  -10.94   -6.55   -6.72
+dT30    :   2.411   2.094   1.790   1.328   1.359   0.719   0.547
+dC50    :  -4.697   1.046   2.959   3.897   3.328   2.954   3.199
+dTs     : 334.328 116.484  31.997  18.030   9.013 -17.376 -16.992
+dLvl    :   +1.94   -3.11   -3.25   -1.91   +2.24   +0.61   +1.62
+
+[LS2-MP3]
+band    :     125     250     500      1k      2k      4k      8k
+T20  sim :   1.606   0.857   0.956   1.040   1.009   0.908   0.712
+T20  ref :   2.466   0.830   0.814   0.826   0.758   0.697   0.530
+T30  sim :   3.207   1.334   0.994   1.044   1.025   0.918   0.710
+T30  ref :   5.005   3.503   1.895   1.496   0.857   0.700   0.539
+EDT  sim :   0.990   0.843   0.982   1.017   1.048   0.904   0.677
+EDT  ref :   1.237   0.609   0.742   0.753   0.776   0.695   0.536
+C50  sim :  -1.168  -0.354   0.760   0.403  -0.061   0.919   2.707
+C50  ref :   2.210   3.004   3.258   1.173   1.834   3.080   5.855
+C80  sim :   0.790   3.486   3.597   3.132   2.934   3.966   6.625
+C80  ref :   4.081   8.265   6.806   4.671   5.169   6.664   9.567
+D50  sim :   0.433   0.480   0.544   0.523   0.496   0.553   0.651
+D50  ref :   0.625   0.666   0.679   0.567   0.604   0.670   0.794
+Ts   sim :  89.863  69.433  65.349  71.231  72.855  63.496  47.121
+Ts   ref :  70.806  43.539  48.481  57.447  52.930  43.863  30.006
+D80 sim :   0.545   0.691   0.696   0.673   0.663   0.714   0.821
+D80 ref :   0.719   0.870   0.827   0.746   0.767   0.823   0.901
+Lvl sim :  -23.23  -20.70  -13.68  -10.43   -9.89   -5.49   -3.29
+Lvl ref :  -22.09  -19.84  -15.18  -11.71  -13.79   -5.73   -2.39
+dT30    :  -1.798  -2.169  -0.902  -0.452   0.169   0.218   0.170
+dC50    :  -3.378  -3.358  -2.498  -0.770  -1.895  -2.161  -3.149
+dTs     :  19.057  25.894  16.869  13.784  19.925  19.633  17.114
+dLvl    :   -1.13   -0.86   +1.49   +1.28   +3.90   +0.23   -0.90
+
+[LS2-MP4]
+band    :     125     250     500      1k      2k      4k      8k
+T20  sim :   1.635   0.839   0.947   1.026   0.996   0.899   0.711
+T20  ref :   1.661   0.755   0.751   0.805   0.753   0.650   0.535
+T30  sim :   4.659   1.062   0.990   1.036   1.017   0.914   0.705
+T30  ref :   4.366   2.877   1.585   1.363   0.819   0.687   0.543
+EDT  sim :   1.221   0.998   0.985   1.032   1.061   0.913   0.679
+EDT  ref :   0.860   0.463   0.626   0.851   0.726   0.707   0.462
+C50  sim :   1.042  -0.785  -0.191   0.657  -0.272   0.603   2.521
+C50  ref :   0.397   6.632   2.856   1.788   2.092   2.135   5.297
+C80  sim :   2.147   2.826   2.763   3.386   2.710   3.688   6.377
+C80  ref :   5.260  10.456   7.033   5.050   5.572   5.619   9.311
+D50  sim :   0.560   0.455   0.489   0.538   0.484   0.535   0.641
+D50  ref :   0.523   0.822   0.659   0.601   0.618   0.620   0.772
+Ts   sim :  75.689  75.796  71.418  68.987  75.130  66.117  48.674
+Ts   ref :  69.883  32.845  48.980  55.709  53.445  51.461  36.917
+D80 sim :   0.621   0.657   0.654   0.686   0.651   0.700   0.813
+D80 ref :   0.771   0.917   0.835   0.762   0.783   0.785   0.895
+Lvl sim :  -23.26  -19.98  -13.80  -10.15   -9.87   -5.51   -3.34
+Lvl ref :  -21.50  -17.13  -14.25  -11.24  -12.98   -5.83   -2.60
+dT30    :   0.294  -1.815  -0.595  -0.327   0.197   0.228   0.162
+dC50    :   0.644  -7.417  -3.047  -1.131  -2.364  -1.532  -2.775
+dTs     :   5.806  42.951  22.438  13.278  21.685  14.655  11.757
+dLvl    :   -1.76   -2.85   +0.45   +1.08   +3.11   +0.32   -0.74
+
+-> <cluster-work>/aura/runs/r40/cr1_door1_fitted
+Traceback (most recent call last):
+  File "<cluster-work>/aura/BRAS/CR2/plot.py", line 13, in <module>
+    import matplotlib
+ModuleNotFoundError: No module named 'matplotlib'
+cr2_run: figure not generated (plot.py code 1) -- the report stays in <cluster-work>/aura/runs/r40/cr1_door1_fitted

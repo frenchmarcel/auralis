@@ -1,0 +1,22 @@
+{
+  "name": "exemple_boite",
+  "fs": 48000,
+  "duration": 1.2,
+  "engine": {"n_rays": 200000, "ism_order": 2, "fdtd": true,
+             "n_threads": 1, "seed": 1234},
+  "geometry": {"obj": "geometrie.obj"},
+  "materials": {
+    "mur_platre": {"absorption": [0.02, 0.02, 0.03, 0.04, 0.05, 0.05, 0.06],
+                   "scattering": 0.1, "transmission": 0.0},
+    "panneau_laine": {"phys": {"model": "miki", "sigma": 12000,
+                               "thickness_mm": 50, "air_gap_mm": 100},
+                      "scattering": 0.3, "transmission": 0.0}
+  },
+  "pairs": [
+    {"label": "LS1-MP1", "source": [1.0, 2.0, 1.5],
+     "receiver": [4.0, 3.0, 1.2],
+     "reference_wav": "mesures/ls1_mp1.wav"},
+    {"label": "LS1-MP2", "source": [1.0, 2.0, 1.5],
+     "receiver": [2.5, 4.5, 1.2]}
+  ]
+}
