@@ -9,6 +9,7 @@ import sys
 import tempfile
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -161,7 +162,7 @@ def test_reflection_relative():
 def test_sofa_pairs():
     """The SOFA extractor reads positions and labels from a compliant
     synthetic file (cartesian SourcePosition, EmitterID)."""
-    import h5py
+    h5py = pytest.importorskip("h5py")
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..",
                                     "tools"))
     import sofa_pairs

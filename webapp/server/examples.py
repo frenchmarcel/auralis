@@ -13,6 +13,7 @@ import threading
 import numpy as np
 
 from . import directivities as dirlib
+from . import heads as headlib
 from . import meshcheck, parfile
 from . import sim as simlib
 from . import sounds as soundlib
@@ -438,6 +439,12 @@ def _short_credit(e):
     return "%s (%s), %s" % m.groups() if m else e["credit"]
 
 
+def _measured_head():
+    """The FABIAN head when it is installed (data_hrtf/, not in the repository), else the model."""
+    return "fabian" if any(h["id"] == "fabian" and h["available"] for h in headlib.listing()) \
+        else "model"
+
+
 def _paris_recording(store, rec_id, index, cache):
     """(sound id, path, credit) of a recording of data/examples/paris/sounds in the store's
     library, added once per recording."""
@@ -460,7 +467,7 @@ def _paris_recordings(store, library, sid):
     cache = {}
     hum_sid, hum_wav, hum_credit = _paris_recording(store, 512142, index, cache)
     m["settings"].update(mode="advanced", solvers="both", transition_hz=250.0, open_scene=True,
-                         head="fabian", ir_length_s=1.5, background_noise=list(CITY_HUM_60DBA),
+                         head=_measured_head(), ir_length_s=1.5, background_noise=list(CITY_HUM_60DBA),
                          background_recording={"sound_id": hum_sid, "dba": PARIS_HUM_DBA,
                                                "path": hum_wav, "name": PARIS_SOUND_NAMES[512142],
                                                "credit": hum_credit})
@@ -550,10 +557,11 @@ def install(store, library, jobs=None, run=True, force=False):
         built = []
         if since < 1:
             s = store.create_space(p["id"], "Concert halls", "")
-            for spec in HALLS:
-                r = guarded(_hall, s["id"], *spec)
-                if r:
-                    built.append(dict(r, example=spec[1]))
+            halls = [dict(r, example=spec[1]) for spec in HALLS
+                     for r in [guarded(_hall, s["id"], *spec)] if r]
+            built.extend(halls)
+            if not halls:                         # no local Odeon data: no empty space
+                store.delete_space(s["id"])
         if since < 7:
             # a store from before version 7 already has CR2 (its own space): the others join
             rooms = BRAS_ROOMS if since < 1 else [x for x in BRAS_ROOMS if x[0] != "cr2"]

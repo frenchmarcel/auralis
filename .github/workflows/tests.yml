@@ -1,0 +1,28 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install the Python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install "numpy<2" scipy pytest h5py fastapi "uvicorn[standard]" python-multipart openpyxl ezdxf rhino3dm ifcopenshell
+      - name: Build the native libraries (CPU, and the CUDA code in CPU emulation)
+        run: |
+          bash native/build.sh
+          bash native/build_cuda.sh --emulate
+      - name: Run the tests (no GPU, no local data)
+        env:
+          AURALIS_GPU: "0"
+        run: python -m pytest tests -q

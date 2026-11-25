@@ -75,7 +75,7 @@ def build_brick_scene():
                                     mats, names)
 
 
-def test_host_parity(sc):
+def check_host_parity(sc):
     """raycast + permeation: same host algorithms -> bit-exact identity."""
     cpu = NativeEngine(sc)
     emu = NativeEngine(sc, lib_path=EMU)
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         sys.exit(0)
     sc = build_brick_scene()
     print("== host parity (raycast / permeation) ==")
-    test_host_parity(sc)
+    check_host_parity(sc)
     print("== tracer equivalence ==")
     test_tracer_equivalence()
     print("== full pipeline ==")

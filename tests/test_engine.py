@@ -185,7 +185,7 @@ def test_native_tracer_rt():
     return hist
 
 
-def test_cross_consistency(hp, hn):
+def check_cross_consistency(hp, hn):
     if hp is None or hn is None:
         return
     print("[cross] Python vs native")
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     test_image_sources()
     hp = test_python_tracer_rt()
     hn = test_native_tracer_rt()
-    test_cross_consistency(hp, hn)
+    check_cross_consistency(hp, hn)
     test_wav_roundtrip()
     test_convolution_identity()
     test_events_hist()
