@@ -131,6 +131,7 @@ def test_grid_alignment_finds_the_street_and_keeps_the_points(monkeypatch):
         return np.zeros((n, len(rts)))
     monkeypatch.setattr(F, "_pick_fdtd_backend", lambda engine, grid=None: (runner, "fake"))
     monkeypatch.setenv("AURALIS_FDTD_CONFORMAL", "0")
+    monkeypatch.setenv("AURALIS_FDTD_EMPTY_DENSE", "0")   # the empty pass as an indexed grid too
     for align in (False, True):
         F.run_low_band(sc, src, rcvs, fs=8000, duration=0.02, f_cross=120.0,
                        speed_of_sound=343.0, align_grid=align)
@@ -175,6 +176,8 @@ def test_kept_grid_series_equals_fresh_runs(kind, case, devs, monkeypatch):
     lib = _lib(kind)
     if lib is None or not hasattr(lib, "aur_fdtd_session4m_create"):
         pytest.skip("no %s library with FDTD sessions (ABI 2.6)" % kind)
+    # kept grids keep the indexed empty pass: fresh runs must not take the dense one
+    monkeypatch.setenv("AURALIS_FDTD_EMPTY_DENSE", "0")
     fresh = _series(case, lib, None, False, monkeypatch)
     kept = _series(case, lib, devs, True, monkeypatch)
     for a, b in zip(fresh, kept):

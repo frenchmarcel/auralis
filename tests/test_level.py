@@ -100,10 +100,11 @@ def test_free_field_bake():
 
 def test_normalization_invariance():
     sc, src, rcv = _anechoic_pair()
+    # CPU tracer: two calls compared to 1e-12, the GPU one differs by ~1e-9 (float atomics)
     r0 = bake(sc, src, rcv, BakeConfig(fs=48000, n_rays=8000,
-                                       normalize=False, seed=11))
+                                       normalize=False, seed=11, engine="native"))
     r1 = bake(sc, src, rcv, BakeConfig(fs=48000, n_rays=8000,
-                                       normalize=True, seed=11))
+                                       normalize=True, seed=11, engine="native"))
     g = 10.0 ** (r1.stats["norm_gain_db"] / 20.0)
     err = float(np.abs(r1.ir - r0.ir * g).max() / np.abs(r1.ir).max())
     check("IR_normalized = IR_absolute * gain (err %.1e)" % err, err < 1e-9)

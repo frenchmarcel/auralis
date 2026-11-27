@@ -96,6 +96,7 @@ def test_native_flood_keeps_the_source_component():
 
 def _grids_of_run(case, native, monkeypatch):
     """The FdtdGrid objects a run_low_band call hands to the solver (solver replaced)."""
+    monkeypatch.setenv("AURALIS_FDTD_EMPTY_DENSE", "0")   # the empty pass as an indexed grid too
     caught = []
 
     def runner(grid, pulse, st, rts, n):

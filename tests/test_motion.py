@@ -157,7 +157,8 @@ def test_pan_and_mix():
     s_b = SourceDef("b", (10.0, 5.0, 1.5))
     d_a = rng.standard_normal(fs)
     d_b = rng.standard_normal(fs)
-    cfgN = BakeConfig(**{**cfg.__dict__, "normalize": False})
+    # CPU tracer: the mix is compared to the sum at 1e-10, the GPU one differs by ~1e-9
+    cfgN = BakeConfig(**{**cfg.__dict__, "normalize": False, "engine": "native"})
     mcN = MotionConfig(base=cfgN, reverb_dt=0.5)
     oa, _ = render_moving(sc, s_a, rcv, d_a, mcN)
     ob, _ = render_moving(sc, s_b, rcv, d_b, mcN)
