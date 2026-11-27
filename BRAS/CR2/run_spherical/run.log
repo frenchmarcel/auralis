@@ -268,7 +268,7 @@ dLvl    :   +4.23   -0.35   -0.37   +0.32   +3.32   -0.08   -0.64
 
 -> BRAS/CR2/run_spherical
 Traceback (most recent call last):
-  File "/home/mgibier/Téléchargements/aura/BRAS/CR2/plot.py", line 13, in <module>
+  File "BRAS/CR2/plot.py", line 13, in <module>
     import matplotlib
 ModuleNotFoundError: No module named 'matplotlib'
 cr2_run: figure not generated (plot.py code 1) -- the report stays in BRAS/CR2/run_spherical

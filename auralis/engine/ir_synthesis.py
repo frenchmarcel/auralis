@@ -7,7 +7,7 @@ from __future__ import annotations
 import numpy as np
 
 from .bands import band_masks, interp_band_gains, band_energy_fraction
-from .reflection import event_reflection_spectrum, long_event_fir
+from .reflection import event_reflection_spectrum, long_event_fir, scattered_event_fir
 from .hrtf import (FIR_TAPS, _FIR_NFFT, event_fir_pair, event_fir_stereo,
                    late_tail_binaural, late_tail_stereo,
                    place_fir, receiver_basis)
@@ -33,6 +33,14 @@ def event_correction(ev, adm_table, freqs, fs):
     if adm_table is None or not bounces:
         return amps, None, None
     return amps, event_reflection_spectrum(freqs, bounces, adm_table), None
+
+
+def scattered_part(ev, adm_table, fs, seed):
+    """FIR and arrival tap of the diffuse share of a rough-ground event, or None."""
+    if adm_table is None or getattr(ev, "incoherent", None) is None or not ev.bounces:
+        return None
+    key = (int(seed) * 1000003 + int(round(ev.time * 1e6)) * 31 + int(ev.order)) & 0x7FFFFFFF
+    return scattered_event_fir(ev.incoherent, ev.bounces, adm_table, fs, key)
 
 
 def lengthen(fir, extra):
@@ -86,6 +94,13 @@ def synthesize_binaural(events, hist, dirs, bin_dt, fs, speed_of_sound,
         firR, _c2 = lengthen(firR, extra)
         place_fir(L, sgn[ie] * firL, (ev.time + dL) * fs - center - c2)
         place_fir(R, sgn[ie] * firR, (ev.time + dR) * fs - center - c2)
+        sc = scattered_part(ev, adm_table, fs, seed)
+        if sc is not None:
+            uL, uR, dL, dR = event_fir_pair(np.ones_like(amps), ev.direction, right, fs,
+                                            speed_of_sound, n_taps=n_taps_ev,
+                                            hrtf_set=hrtf_set, basis=basis)
+            place_fir(L, np.convolve(uL, sc[0]), (ev.time + dL) * fs - center - sc[1])
+            place_fir(R, np.convolve(uR, sc[0]), (ev.time + dR) * fs - center - sc[1])
 
     rng = np.random.default_rng(seed)
     tL, tR = late_tail_binaural(hist, dirs, bin_dt, fs, n, right,
@@ -135,6 +150,12 @@ def synthesize_stereo(events, hist, dirs, bin_dt, fs, speed_of_sound,
         fr, _c2 = lengthen(fr, extra)
         place_fir(L, sgn[ie] * fl, ev.time * fs - center - c2)
         place_fir(R, sgn[ie] * fr, ev.time * fs - center - c2)
+        sc = scattered_part(ev, adm_table, fs, seed)
+        if sc is not None:
+            ul, ur, _dl, _dr = event_fir_stereo(np.ones_like(amps), ev.direction, right, fs,
+                                                base_deg)
+            place_fir(L, np.convolve(ul, sc[0]), ev.time * fs - center - sc[1])
+            place_fir(R, np.convolve(ur, sc[0]), ev.time * fs - center - sc[1])
 
     rng = np.random.default_rng(seed)
     tL, tR = late_tail_stereo(hist, dirs, bin_dt, fs, n, right, base_deg,
@@ -173,6 +194,9 @@ def synthesize_mono(events, hist, bin_dt, fs, seed: int = 0,
         h = np.fft.irfft(mag, _FIR_NFFT)
         h, c2 = lengthen(np.roll(h, center)[:FIR_TAPS] * win, extra)
         place_fir(out, sgn[ie] * h, ev.time * fs - center - c2)
+        sc = scattered_part(ev, adm_table, fs, seed)
+        if sc is not None:
+            place_fir(out, sc[0], ev.time * fs - sc[1])
 
     rng = np.random.default_rng(seed)
     masks = band_masks(np.fft.rfftfreq(n, 1.0 / fs), fs)
@@ -289,9 +313,12 @@ def synthesize_ambisonic(events, hist, dirs, bin_dt, fs, order: int = 2,
         h = np.fft.irfft(mag, _FIR_NFFT)
         h, c2 = lengthen(np.roll(h, center)[:FIR_TAPS] * win, extra)
         y = sh_sn3d(ev.direction, order)[0]
+        sc = scattered_part(ev, adm_table, fs, seed)
         for ch in range(n_ch):
             if y[ch] != 0.0:
                 place_fir(out[:, ch], sgn[ie] * y[ch] * h, ev.time * fs - center - c2)
+                if sc is not None:
+                    place_fir(out[:, ch], y[ch] * sc[0], ev.time * fs - sc[1])
 
     from .metrics import smoothed_directions
     a_bin, unit = smoothed_directions(hist, dirs)

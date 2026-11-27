@@ -69,16 +69,63 @@ GROUND_CLASSES = {
 }
 
 
-def ground_spec(ground) -> dict:
-    """Physical material of a ground: a Nord2000 class letter, or an effective flow
-    resistivity in Pa.s/m2. Delany-Bazley model, semi-infinite."""
+# Terrain roughness classes of Nord2000: standard deviation of the random height variations, m.
+# Plovsing and Kragh, Nord2000 Part 1 (DELTA report AV 1849/00, revised 2006), Table 2.
+ROUGHNESS_CLASSES = {"N": 0.0, "S": 0.25, "M": 0.5, "L": 1.0}
+
+
+def roughness_coherence(f, sigma_r, sin_grazing, c):
+    """Coherence coefficient Fr of a reflection on terrain with random height variations of
+    standard deviation sigma_r (m), Nord2000 Part 1 Eqs. 148-150: X = k sigma_r sin(psi),
+    Fr = exp(g(X) / 2). Fr = 1 for a smooth ground and falls towards 0 when X grows."""
+    X = 2.0 * np.pi * np.asarray(f, dtype=np.float64) / float(c) * float(sigma_r) \
+        * float(sin_grazing)
+    g = np.zeros_like(X)
+    mid = (X > 0.026686) & (X < 0.115448)
+    g[mid] = 0.55988 * (0.115448 - X[mid]) - 0.049696
+    hi = X >= 0.115448
+    x = X[hi]
+    g[hi] = -0.066 + 1.066 * x - 8.543 * x ** 2 + 4.71 * x ** 3 - 0.83 * x ** 4
+    return np.exp(0.5 * g)
+
+
+def _sigma_of(ground):
     if isinstance(ground, str):
         key = ground.strip().upper()
         if key not in GROUND_CLASSES:
             raise ValueError("unknown ground class %r (A-G)" % ground)
-        sigma = GROUND_CLASSES[key][0]
+        return GROUND_CLASSES[key][0]
+    sigma = float(ground)
+    if not sigma > 0.0:
+        raise ValueError("flow resistivity must be positive")
+    return sigma
+
+
+def ground_spec(ground, roughness=None, alpha_e=None) -> dict:
+    """Physical material of a ground.
+
+    ground: a Nord2000 class letter, or an effective flow resistivity in Pa.s/m2. Without
+    alpha_e: the Delany-Bazley model on a semi-infinite ground (the Nord2000 classes). With
+    alpha_e (1/m, the rate at which the porosity falls with depth): Attenborough's
+    two-parameter variable porosity model. roughness: a Nord2000 roughness class (N, S, M, L)
+    or the standard deviation of the height variations in m; it makes the reflection partly
+    incoherent (spherical-wave reflections only)."""
+    sigma = _sigma_of(ground)
+    if alpha_e is None:
+        layer = {"model": "delany_bazley", "sigma": sigma, "semi_infinite": True}
     else:
-        sigma = float(ground)
-        if not sigma > 0.0:
-            raise ValueError("flow resistivity must be positive")
-    return {"layers": [{"model": "delany_bazley", "sigma": sigma, "semi_infinite": True}]}
+        layer = {"model": "variable_porosity", "sigma": sigma, "alpha_e": float(alpha_e)}
+    spec = {"layers": [layer]}
+    if roughness is not None:
+        if isinstance(roughness, str):
+            key = roughness.strip().upper()
+            if key not in ROUGHNESS_CLASSES:
+                raise ValueError("unknown roughness class %r (N, S, M, L)" % roughness)
+            sr = ROUGHNESS_CLASSES[key]
+        else:
+            sr = float(roughness)
+            if sr < 0.0:
+                raise ValueError("roughness must be >= 0")
+        if sr > 0.0:
+            spec["roughness"] = sr
+    return spec

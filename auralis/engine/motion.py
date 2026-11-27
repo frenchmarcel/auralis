@@ -19,14 +19,14 @@ from .directivity import as_directivity
 from .diffraction import compute_diffraction, extract_edges
 from .geometry import NumpyRaycaster, SceneData, extract_planes
 from .reflection import build_admittance_table
-from .ir_synthesis import _event_signs, event_correction, lengthen
+from .ir_synthesis import _event_signs, event_correction, lengthen, scattered_part
 from .hrtf import (FIR_TAPS, _FIR_NFFT, event_fir_pair, event_fir_stereo,
                    itd_seconds, late_tail_binaural, late_tail_stereo,
                    place_fir, receiver_basis)
 from .ism import compute_direct, compute_image_sources
 from .pipeline import (BakeConfig, ReceiverDef, SourceDef,
                        apply_source_directivity, effective_max_bounces, estimate_max_time,
-                       wave_ear_half, _select_engine)
+                       wave_ear_half, _select_engine, resolve_spherical)
 
 __all__ = ["Trajectory", "MovingSource", "MovingReceiver", "MotionConfig",
            "render_moving", "render_scene_moving"]
@@ -240,6 +240,8 @@ def render_moving(scene: SceneData, source, receiver, dry: np.ndarray,
     _n_bounce = effective_max_bounces(scene, cfg, max_time, c)
     n_ir = _ir_len(n_bins, cfg.bin_dt, fs)
     engine_name, engine, tracer = _select_engine(scene, cfg.engine)
+    sph = resolve_spherical(scene, cfg, tracer,
+                            np.atleast_2d(msrc.trajectory.position(0.0))[0])
     planes, tri_plane = extract_planes(scene, cfg.max_planes)
     edges = (extract_edges(scene, max_edges=cfg.max_edges)
              if getattr(cfg, "diffraction", True) else [])
@@ -369,14 +371,13 @@ def render_moving(scene: SceneData, source, receiver, dry: np.ndarray,
             getattr(scene, 'mat_phys', None))   # cached
                if getattr(cfg, "complex_reflection", True) else None)
         events = [compute_direct(scene, tracer, ps, pr, air, c)]
-        events[0].exact = bool(getattr(cfg, "spherical_reflection", False) and adm is not None)
+        events[0].exact = bool(sph and adm is not None)
         if cfg.ism_order > 0:
             events += compute_image_sources(scene, planes, tri_plane, tracer,
                                             ps, pr, cfg.ism_order, air, c,
                                             adm_table=adm,
-                                            spherical=getattr(cfg, "spherical_reflection", False))
+                                            spherical=sph)
         if edges:
-            sph = getattr(cfg, "spherical_reflection", False)
             events += compute_diffraction(scene, tracer, edges, ps, pr,
                                           air, c, refl_amp=refl_a,
                                           planes=planes if sph else None, tri_plane=tri_plane,
@@ -423,6 +424,17 @@ def render_moving(scene: SceneData, source, receiver, dry: np.ndarray,
             sg = sgn[iev + off]
             placed.append((sg * fl, (ev.time + dL) * fs - center - c2,
                            sg * fr2, (ev.time + dR) * fs - center - c2))
+            sc = scattered_part(ev, adm, fs, cfg.seed)
+            if sc is not None:                         # the diffuse share of a rough ground
+                if stereo_out:
+                    ul, ur, dL, dR = event_fir_stereo(np.ones_like(amps), ev.direction, right,
+                                                      fs, cfg.stereo_base_deg)
+                else:
+                    ul, ur, dL, dR = event_fir_pair(np.ones_like(amps), ev.direction, right,
+                                                    fs, c, n_taps=n_taps_ev, hrtf_set=hset,
+                                                    basis=(fw, upv, right))
+                placed.append((np.convolve(ul, sc[0]), (ev.time + dL) * fs - center - sc[1],
+                               np.convolve(ur, sc[0]), (ev.time + dR) * fs - center - sc[1]))
         n_e = n_ir
         if by_keys:
             # shortest buffer that changes no placement (place_fir clips at the end)
@@ -667,7 +679,9 @@ def _wave_band_keys(scene, sources, receiver, mc: MotionConfig, durations,
               order=int(cfg.fdtd_order), boundary_absorber=cfg.fdtd_absorber,
               conformal=bool(cfg.fdtd_conformal),
               conformal_aniso=bool(cfg.fdtd_conformal_aniso),
-              align_grid=bool(getattr(cfg, "fdtd_align", False)))
+              align_grid=bool(getattr(cfg, "fdtd_align", False)),
+              domain_box=getattr(cfg, "fdtd_box", None),
+              ppw=float(getattr(cfg, "fdtd_ppw", 9.0)))
     mr = _as_moving_receiver(receiver)
     ms = [_as_moving_source(s) for s in sources]
     pats = [_moving_pattern(m, cfg, fc) for m in ms]

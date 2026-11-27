@@ -5,9 +5,10 @@ import { ABS_MAX } from '../../lib/colors';
 import { bandLabel, fmtNum } from '../../lib/format';
 import { ComplexTableInput, parseComplexTable } from './ComplexTableInput';
 import { AlphaChart } from './MaterialLibrary';
+import { DEFAULT_GROUND, GroundBuilder } from './GroundBuilder';
 import { DEFAULT_PERFORATED, PerforatedBuilder } from './PerforatedBuilder';
 
-type Tab = 'alpha' | 'porous' | 'panel' | 'complex';
+type Tab = 'alpha' | 'porous' | 'panel' | 'ground' | 'complex';
 /** How the porous builder gets its flow resistivity: typed in, or from a mineral wool's type and density. */
 type SigmaMode = 'sigma' | 'wool';
 
@@ -112,6 +113,8 @@ export function NewMaterialDialog({
   const porousPreview = porousResult?.absorption ?? null;
   const [panel, setPanel] = useState(DEFAULT_PERFORATED);
   const [panelPreview, setPanelPreview] = useState<number[] | null>(null);
+  const [groundBody, setGroundBody] = useState(DEFAULT_GROUND);
+  const [groundPreview, setGroundPreview] = useState<number[] | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -188,7 +191,7 @@ export function NewMaterialDialog({
   const alphaComplete = alpha.every((v) => v !== null && Number.isFinite(v));
   const overMax = alpha.some((v) => v !== null && v > ABS_MAX) || (a63 !== null && a63 > ABS_MAX);
   const canCreate =
-    !!name.trim() && !busy && (tab === 'alpha' ? alphaComplete : tab === 'porous' ? !!porousPreview : tab === 'panel' ? !!panelPreview : !complex.errors.length);
+    !!name.trim() && !busy && (tab === 'alpha' ? alphaComplete : tab === 'porous' ? !!porousPreview : tab === 'panel' ? !!panelPreview : tab === 'ground' ? !!groundPreview : !complex.errors.length);
 
   const create = async () => {
     setBusy(true);
@@ -206,6 +209,8 @@ export function NewMaterialDialog({
           ? await api.createMaterial({ ...common, absorption: alpha.map((v) => v ?? 0), absorption_63: a63 })
           : tab === 'panel'
             ? await api.createPerforatedMaterial({ ...common, ...panel })
+            : tab === 'ground'
+              ? await api.createGroundMaterial({ ...common, ...groundBody })
             : await api.createPorousMaterial({ ...common, ...porousBody });
       onCreated(m);
     } catch (e) {
@@ -258,12 +263,15 @@ export function NewMaterialDialog({
               { value: 'alpha', label: 'From octave absorption' },
               { value: 'porous', label: 'Porous builder' },
               { value: 'panel', label: 'Perforated / slotted panel', title: 'Perforated, slotted or micro-perforated sheet over a plenum, with optional fleece and wool' },
+              { value: 'ground', label: 'Outdoor ground', title: 'A Nord2000 ground class or a flow resistivity, optional porosity rate and roughness' },
               { value: 'complex', label: 'From Z or R (complex)', title: 'Measured complex normal-incidence impedance or reflection factor: the phase is kept for the wave band' },
             ]}
           />
         </div>
         {tab === 'panel' ? (
           <PerforatedBuilder value={panel} onChange={setPanel} onPreview={setPanelPreview} />
+        ) : tab === 'ground' ? (
+          <GroundBuilder value={groundBody} onChange={setGroundBody} onPreview={setGroundPreview} />
         ) : tab === 'complex' ? (
           <ComplexTableInput kind={complexKind} setKind={setComplexKind} text={complexText} setText={setComplexText} parsed={complex} created={created} disabled={!!created || busy} />
         ) : tab === 'alpha' ? (

@@ -40,14 +40,26 @@ def miki(f, sigma: float):
 def delany_bazley(f, sigma: float):
     """(Zc, k) of the Delany-Bazley model. f: Hz (array), sigma: Pa.s/m^2.
 
-    The model that defines the effective flow resistivities of outdoor ground classes
-    (Nord2000, Harmonoise)."""
+    The original coefficients, in terms of 1000 f / sigma: the form that defines the effective
+    flow resistivities of the outdoor ground classes (Nord2000, Appendix B)."""
     f = np.asarray(f, dtype=np.float64)
-    X = RHO0 * np.maximum(f, 1e-3) / float(sigma)
-    Zc = Z0 * (1.0 + 0.0571 * X ** -0.754 - 1j * 0.087 * X ** -0.732)
-    k = (2.0 * np.pi * f / C0) * (1.0 + 0.0978 * X ** -0.700
-                                  - 1j * 0.189 * X ** -0.595)
+    X = 1000.0 * np.maximum(f, 1e-3) / float(sigma)
+    Zc = Z0 * (1.0 + 9.08 * X ** -0.75 - 1j * 11.9 * X ** -0.73)
+    k = (2.0 * np.pi * f / C0) * (1.0 + 10.8 * X ** -0.70 - 1j * 10.3 * X ** -0.59)
     return Zc, k
+
+
+def variable_porosity(f, sigma_e: float, alpha_e: float):
+    """Normalised surface impedance Zs / (rho0 c0) of Attenborough's two-parameter model.
+
+    A rigid porous ground whose porosity falls exponentially with depth, in its
+    low-frequency, high-flow-resistivity limit (Attenborough, J. Sound Vib. 99, 1985):
+    effective flow resistivity sigma_e (Pa.s/m2) and rate of porosity change alpha_e (1/m).
+    Zs = (1 - j) sqrt(sigma_e / (pi gamma rho0 f)) - j c0 alpha_e / (4 pi gamma f) in the
+    e^{+jwt} convention (0.436 and 19.48 in the usual numerical form)."""
+    f = np.maximum(np.asarray(f, dtype=np.float64), 1e-3)
+    return ((1.0 - 1j) * np.sqrt(float(sigma_e) / (np.pi * GAM * RHO0 * f))
+            - 1j * C0 * float(alpha_e) / (4.0 * np.pi * GAM * f))
 
 
 def jca(f, phi: float, sigma: float, alpha_inf: float,
@@ -113,7 +125,8 @@ def _safe_sin_over(x):
 def surface_impedance(spec: dict, f, mu: float = 1.0):
     """NORMAL surface impedance Zs(f) at incidence cos(theta) = mu, with
     rigid backing. spec = {"layers": [{"model", "d" (m), ...} front->back]}.
-    A last layer with "semi_infinite": true has no backing (a deep ground)."""
+    A last layer with "semi_infinite": true has no backing (a deep ground). A
+    "variable_porosity" layer is a whole locally reacting ground (variable_porosity)."""
     f = np.asarray(f, dtype=np.float64)
     w = 2.0 * np.pi * np.maximum(f, 1e-3)
     mu = float(np.clip(mu, 1e-6, 1.0))
@@ -150,6 +163,10 @@ def surface_impedance(spec: dict, f, mu: float = 1.0):
             Zp = 1j * w * pm + pr + (kk / (1j * w) if kk > 0.0 else 0.0)
             A, B, Cc, D = A, A * Zp + B, Cc, Cc * Zp + D
             continue
+        if m == "variable_porosity":
+            Zt = Z0 * variable_porosity(f, layer["sigma"], layer.get("alpha_e", 0.0))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return (A * Zt + B) / (Cc * Zt + D)
         if layer.get("semi_infinite"):
             # the wave never comes back: the stack ends on the medium's own impedance
             Zc, k = _layer_fluid(f, layer)

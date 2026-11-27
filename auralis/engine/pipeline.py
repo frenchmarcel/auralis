@@ -68,9 +68,11 @@ class BakeConfig:
     max_bounces: int = 200
     ism_order: int = 2
     complex_reflection: bool = True   # complex R(theta, f) on speculars
-    # Point-source (spherical-wave) reflection on the image sources: the ground effect
-    # outdoors. Physical materials then use their exact admittance.
-    spherical_reflection: bool = False
+    # Point-source (spherical-wave) reflection on the image sources and ground paths around
+    # diffracting edges: the ground effect and screens outdoors. Physical materials then use
+    # their exact admittance. None: on in an open scene (test rays escape), off in a closed
+    # room, where it changes nothing it was checked on (CR2 1.10 against 1.09 JND).
+    spherical_reflection: Optional[bool] = None
     output_layout: str = "binaural"   # "binaural" (headphones) | "stereo"
     hrtf_path: str = ""               # measured HRTF .npz ('' = model)
     stereo_base_deg: float = 30.0     # half-angle of the speaker base
@@ -115,6 +117,15 @@ class BakeConfig:
     # Rotate the wave-band grid along the scene (smallest horizontal box). A street at an
     # angle to the axes then takes half the cells. Off by default to keep the validated grids.
     fdtd_align: bool = False
+    # Corners ((x, y, z), (x, y, z)) of the wave domain, or None (the geometry's box). The
+    # geometry is cut there and goes on through the absorbing layer: a terrain larger than the
+    # box acts as an infinite ground, with no edge to diffract.
+    fdtd_box: Optional[tuple] = None
+    # Wave-band grid points per wavelength at 1.5 x the transition. Grazing reflections over a
+    # long ground need more: the cells next to a wall run at second order, and the reflection
+    # they give at 0.1 rad grazing is 15-36 % too strong at 13-18 points per wavelength (it
+    # falls as dx^2).
+    fdtd_ppw: float = 9.0
     # Materials given by alpha only get the physical model (porous layer, resistive screen,
     # panel) that reproduces their alpha, for the wave band and the complex reflections
     # (matinfer, applied by project.build_scene). The rays keep the tabulated alpha.
@@ -236,6 +247,34 @@ _SCENE_CACHE: "OrderedDict" = OrderedDict()
 _SCENE_CACHE_SIZE = 8
 
 
+_OPEN_TOLD = set()
+
+
+def resolve_spherical(scene: SceneData, cfg, tracer, src) -> bool:
+    """BakeConfig.spherical_reflection resolved. None turns it on when more than 5 % of 256
+    test rays from the source escape the model (an open scene), and says so once."""
+    v = getattr(cfg, "spherical_reflection", None)
+    if v is not None:
+        return bool(v)
+    src = np.asarray(src, dtype=np.float64)
+    tv = np.asarray(scene.tri_verts, dtype=np.float64).reshape(-1, 3)
+    reach = 4.0 * float(np.linalg.norm(tv.max(axis=0) - tv.min(axis=0))) + 1.0
+    n = 256
+    i = np.arange(n) + 0.5
+    z = 1.0 - 2.0 * i / n
+    ph = np.pi * (1.0 + 5.0 ** 0.5) * i
+    r = np.sqrt(1.0 - z * z)
+    dirs = np.stack([r * np.cos(ph), r * np.sin(ph), z], axis=1)
+    out = sum(1 for d in dirs if tracer.cast(src, d, reach)[0] < 0)
+    on = out > 0.05 * n
+    key = (id(scene), on)
+    if on and key not in _OPEN_TOLD:
+        _OPEN_TOLD.add(key)
+        print("[Auralis] open scene (%d of %d test rays escape): spherical-wave reflections and "
+              "ground paths around edges are on" % (out, n), flush=True)
+    return on
+
+
 def scene_cached(scene: SceneData, fn: Callable, **kw):
     """fn(scene, **kw) for a function of the triangles and their materials only.
 
@@ -296,16 +335,17 @@ def bake(scene: SceneData, source: SourceDef, receiver: ReceiverDef,
         adm_table = build_admittance_table(
             scene.absorption,
             getattr(scene, 'mat_phys', None))
+    sph = resolve_spherical(scene, cfg, tracer, src)
     events: List[AcousticEvent] = [
         compute_direct(scene, tracer, src, rcv, air, c)]
     # the direct sound interferes with the spherical-wave reflections: same precision
-    events[0].exact = bool(cfg.spherical_reflection and adm_table is not None)
+    events[0].exact = bool(sph and adm_table is not None)
     planes, tri_plane = extract_planes(scene, cfg.max_planes)
     if cfg.ism_order > 0:
         events += compute_image_sources(scene, planes, tri_plane, tracer,
                                         src, rcv, cfg.ism_order, air, c,
                                         adm_table=adm_table,
-                                        spherical=cfg.spherical_reflection)
+                                        spherical=sph)
     n_edges = 0
     if cfg.diffraction:
         edges = list(scene_cached(scene, extract_edges, max_edges=cfg.max_edges))
@@ -314,8 +354,8 @@ def bake(scene: SceneData, source: SourceDef, receiver: ReceiverDef,
             events += compute_diffraction(
                 scene, tracer, edges, src, rcv, air, c,
                 refl_amp=np.sqrt(scene.reflectance()),
-                planes=planes if cfg.spherical_reflection else None, tri_plane=tri_plane,
-                adm_table=adm_table, spherical=cfg.spherical_reflection)
+                planes=planes if sph else None, tri_plane=tri_plane,
+                adm_table=adm_table, spherical=sph)
     rbs_dims = None
     if cfg.rbs_scattering:
         from . import rbs as _rbs
@@ -545,7 +585,8 @@ def bake(scene: SceneData, source: SourceDef, receiver: ReceiverDef,
                         boundary_absorber=cfg.fdtd_absorber,
                         conformal=bool(cfg.fdtd_conformal),
                             conformal_aniso=bool(cfg.fdtd_conformal_aniso),
-                            align_grid=bool(cfg.fdtd_align),
+                            align_grid=bool(cfg.fdtd_align), domain_box=cfg.fdtd_box,
+                        ppw=float(cfg.fdtd_ppw),
                         src_axis=wave_axis, src_first_order=wave_a,
                         src_surface=source.surface or None)
                 except ValueError as exc:
@@ -561,7 +602,8 @@ def bake(scene: SceneData, source: SourceDef, receiver: ReceiverDef,
                             boundary_absorber=cfg.fdtd_absorber,
                             conformal=bool(cfg.fdtd_conformal),
                             conformal_aniso=bool(cfg.fdtd_conformal_aniso),
-                            align_grid=bool(cfg.fdtd_align),
+                            align_grid=bool(cfg.fdtd_align), domain_box=cfg.fdtd_box,
+                        ppw=float(cfg.fdtd_ppw),
                             src_axis=wave_axis, src_first_order=wave_a,
                             src_surface=source.surface or None)
                     else:
@@ -1013,7 +1055,8 @@ def precompute_low_bands(scene: SceneData, source: SourceDef,
                                     boundary_absorber=cfg.fdtd_absorber,
                                     conformal=bool(cfg.fdtd_conformal),
                                     conformal_aniso=bool(cfg.fdtd_conformal_aniso),
-                                    align_grid=bool(cfg.fdtd_align),
+                                    align_grid=bool(cfg.fdtd_align), domain_box=cfg.fdtd_box,
+                        ppw=float(cfg.fdtd_ppw),
                                     src_axis=axis, src_first_order=a_bands,
                                     src_surface=source.surface or None)
         return _wave_spectrum(ir_p, source, cfg, fc), info_p
@@ -1123,6 +1166,24 @@ def apply_source_directivity(events: List[AcousticEvent],
         ct = float(np.clip(np.dot(fwd, np.asarray(e, dtype=np.float64)),
                            -1.0, 1.0))
         ev.amps = ev.amps * dirv.amp(ct)
+        if getattr(ev, "incoherent", None) is not None:
+            ev.incoherent = ev.incoherent * dirv.amp(ct) ** 2
+
+
+def add_incoherent(events, hist, dirs, bin_dt) -> None:
+    """Add the energy that rough grounds take from the coherent reflections to the echogram,
+    at their arrival time and from their direction. For energy metrics (receiver grids): the
+    impulse responses render it with its own spectrum (ir_synthesis.scattered_part)."""
+    n_bins = hist.shape[1]
+    for ev in events:
+        e = getattr(ev, "incoherent", None)
+        if e is None:
+            continue
+        k = int(ev.time / bin_dt)
+        if 0 <= k < n_bins:
+            hist[:, k] += e
+            if dirs is not None:
+                dirs[k] += float(np.sum(e)) * np.asarray(ev.direction, dtype=np.float64)
 
 
 def native_available() -> bool:

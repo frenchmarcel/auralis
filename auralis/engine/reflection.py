@@ -512,14 +512,109 @@ def bounce_coeff(bounce, table: dict, f):
     mat, mu = bounce[0], bounce[1]
     if len(bounce) < 4:
         return refl_coeff(mu, mat, table, f), table["anchor"][mat]
-    from .ground import spherical_reflection
+    from .ground import roughness_coherence, spherical_reflection
     spec = table.get("phys", [None] * (mat + 1))[mat]
     if spec:
         g, anc = _cached_gamma(table, mat, spec, f), np.ones(N_BANDS)
     else:
         g, anc = _gamma_of(f, table["gi"][mat], table["A"][mat], table["l"][mat]), \
             table["anchor"][mat]
-    return spherical_reflection(f, g, mu, bounce[2], bounce[3]), anc
+    q = spherical_reflection(f, g, mu, bounce[2], bounce[3])
+    sr = float(spec.get("roughness", 0.0)) if spec else 0.0
+    if sr > 0.0:
+        q = q * roughness_coherence(f, sr, mu, bounce[3])   # the coherent part only
+    return q, anc
+
+
+def incoherent_energy(bounces, table: dict):
+    """Per-band energy that rough bounces move out of the coherent reflection, relative to the
+    event's path factor (air, distance), or None without a rough bounce.
+
+    Each rough bounce keeps Fr^2 |Q|^2 coherent and sends (1 - Fr^2) R^2 to the diffuse field,
+    with R^2 = 1 - alpha at random incidence (Nord2000 Part 1, Eqs. 136-139). Several bounces
+    give every combination with at least one incoherent bounce."""
+    from .ground import roughness_coherence
+    coh = np.ones(N_BANDS)
+    tot = np.ones(N_BANDS)
+    rough = False
+    for b in bounces:
+        r, anc = bounce_coeff(b, table, CENTERS)
+        ce = (anc * np.abs(r)) ** 2
+        inc = np.zeros(N_BANDS)
+        if len(b) >= 4:
+            spec = table.get("phys", [None] * (b[0] + 1))[b[0]]
+            sr = float(spec.get("roughness", 0.0)) if spec else 0.0
+            if sr > 0.0:
+                fr = roughness_coherence(CENTERS, sr, b[1], b[3])
+                inc = (1.0 - fr ** 2) * (1.0 - alpha_random(_cached_gamma(table, b[0], spec,
+                                                                          CENTERS)))
+                rough = True
+        coh *= ce
+        tot *= ce + inc
+    return np.maximum(tot - coh, 0.0) if rough else None
+
+
+def _cached_alpha(table: dict, mat: int, spec: dict, f):
+    """Random-incidence alpha of a physical material on a grid, kept in the table."""
+    f = np.asarray(f, dtype=np.float64)
+    key = (mat, len(f), float(f[0]), float(f[-1]))
+    cache = table.setdefault("_alpha_cache", {})
+    a = cache.get(key)
+    if a is None:
+        if len(cache) > 32:
+            cache.clear()
+        a = cache[key] = alpha_random(_cached_gamma(table, mat, spec, f))
+    return a
+
+
+def incoherent_spectrum(fq, bounces, table: dict):
+    """incoherent_energy on the frequency grid fq, or None without a rough bounce."""
+    from .ground import roughness_coherence
+    coh = np.ones(len(fq))
+    tot = np.ones(len(fq))
+    rough = False
+    for b in bounces:
+        r, anc = bounce_coeff(b, table, fq)
+        ce = (interp_band_gains(fq, anc) * np.abs(r)) ** 2
+        inc = 0.0
+        if len(b) >= 4:
+            spec = table.get("phys", [None] * (b[0] + 1))[b[0]]
+            sr = float(spec.get("roughness", 0.0)) if spec else 0.0
+            if sr > 0.0:
+                fr = roughness_coherence(fq, sr, b[1], b[3])
+                inc = (1.0 - fr ** 2) * (1.0 - _cached_alpha(table, b[0], spec, fq))
+                rough = True
+        coh *= ce
+        tot *= ce + inc
+    return np.maximum(tot - coh, 0.0) if rough else None
+
+
+def scattered_event_fir(incoherent, bounces, table: dict, fs: float, seed: int,
+                        spread: float = 0.010):
+    """FIR of the diffuse share of a rough-ground reflection, and the tap of its arrival.
+
+    Noise with the energy spectrum of incoherent_spectrum times the event's path factor
+    (taken from its band energies `incoherent`, which hold air, distance and directivity),
+    spread over `spread` s after the arrival. A short burst would stay coherent with the
+    direct sound over a narrow band and beat with it, where the share should add as energy.
+    Deterministic for a given seed. None without a rough bounce."""
+    pre = int(round(0.012 * fs))
+    n_s = max(int(round(spread * fs)), 8)
+    nfft = 1 << int(np.ceil(np.log2(4 * (pre + n_s))))
+    f = np.fft.rfftfreq(nfft, 1.0 / fs)
+    fq = np.maximum(f, 1.0)
+    e = incoherent_spectrum(fq, bounces, table)
+    if e is None:
+        return None
+    ref = incoherent_energy(bounces, table)
+    rest = interp_band_gains(fq, np.sqrt(np.asarray(incoherent, dtype=np.float64)
+                                         / np.maximum(ref, 1e-300)))
+    x = np.zeros(nfft)
+    burst = np.random.default_rng(int(seed) & 0x7FFFFFFF).standard_normal(n_s) \
+        * np.hanning(n_s + 2)[1:-1]
+    x[pre:pre + n_s] = burst / np.sqrt(np.sum(burst ** 2))
+    h = np.fft.irfft(np.fft.rfft(x) * np.sqrt(e) * rest, nfft)[:2 * pre + n_s]
+    return h * _lead_window(len(h), pre), pre
 
 
 def band_R_mag(bounces, table: dict) -> np.ndarray:

@@ -13,7 +13,8 @@ from auralis.engine.diffraction import compute_diffraction, extract_edges
 from auralis.engine.directivity import as_directivity
 from auralis.engine.geometry import extract_planes
 from auralis.engine.ism import compute_direct, compute_image_sources
-from auralis.engine.pipeline import _select_engine, apply_source_directivity, estimate_max_time
+from auralis.engine.pipeline import (_select_engine, apply_source_directivity, estimate_max_time,
+                                     resolve_spherical)
 from auralis.engine.project import build_config, build_scene
 from auralis.engine.reflection import build_admittance_table
 
@@ -59,19 +60,20 @@ def track(sim, mesh, library, geometry, source_id, receiver_id, max_order=None,
         adm = (build_admittance_table(scene.absorption, getattr(scene, "mat_phys", None))
                if cfg.complex_reflection else None)
         planes, tri_plane = extract_planes(scene, cfg.max_planes)
+        sph = resolve_spherical(scene, cfg, tracer, ps)
         events = [compute_direct(scene, tracer, ps, pr, air, c)]
         if order > 0:
             events += compute_image_sources(scene, planes, tri_plane, tracer, ps, pr, order,
                                             air, c, adm_table=adm,
-                                            spherical=cfg.spherical_reflection)
+                                            spherical=sph)
         if cfg.diffraction:
             edges = extract_edges(scene, max_edges=cfg.max_edges)
             if edges:
                 events += compute_diffraction(scene, tracer, edges, ps, pr, air, c,
                                               refl_amp=np.sqrt(scene.reflectance()),
-                                              planes=(planes if cfg.spherical_reflection
-                                                      else None), tri_plane=tri_plane,
-                                              adm_table=adm, spherical=cfg.spherical_reflection)
+                                              planes=planes if sph else None,
+                                              tri_plane=tri_plane, adm_table=adm,
+                                              spherical=sph)
     finally:
         if eng is not None:
             eng.close()

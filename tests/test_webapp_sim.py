@@ -202,3 +202,24 @@ def test_ground_classes_reach_the_engine_with_their_model():
     sc = build_scene(man, "")
     assert sc.mat_phys[0]["layers"][0] == {"model": "delany_bazley", "sigma": 80e3,
                                            "semi_infinite": True}
+
+
+def test_a_custom_ground_carries_its_roughness_and_porosity_rate_to_the_engine():
+    from auralis.engine import ground, poromat
+    from auralis.engine.project import build_scene
+    lib = Library(os.path.join(tempfile.mkdtemp(), "custom.json"))
+    spec = ground.ground_spec("C", roughness="M", alpha_e=10.0)
+    m = lib.add_custom("rough field", "Outdoor ground", "", poromat.alpha_bands(spec), 0.1,
+                       physical={"type": "ground", "class": "C", "sigma": 80e3,
+                                 "model": "variable_porosity", "alpha_e": 10.0,
+                                 "roughness": 0.5})
+    sim = {"id": "g", "layers": {"g": {"material_id": m["id"], "scattering": None}},
+           "settings": default_settings()}
+    mesh = (np.zeros((3, 3)), np.zeros((1, 3), int), np.zeros(1, np.int32), np.ones(1, bool), ["g"])
+    man = simlib.build_manifest(sim, mesh, lib)
+    man["geometry"] = {"triangles": np.array([[[0, 0, 0], [1, 0, 0], [0, 1, 0]]], float),
+                       "tri_mat": np.zeros(1, np.int32)}
+    sc = build_scene(man, "")
+    assert sc.mat_phys[0]["roughness"] == 0.5
+    assert sc.mat_phys[0]["layers"][0] == {"model": "variable_porosity", "sigma": 80e3,
+                                           "alpha_e": 10.0}

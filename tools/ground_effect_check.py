@@ -21,6 +21,7 @@ from auralis.engine.air import config_speed_of_sound             # noqa: E402
 from auralis.engine.geometry import SceneData                    # noqa: E402
 from dataclasses import replace                                   # noqa: E402
 from auralis.engine.pipeline import BakeConfig, ReceiverDef, SourceDef, bake  # noqa: E402
+from auralis.engine.reflection import alpha_random               # noqa: E402
 
 FS = 48000
 THIRDS = 1000.0 * 2.0 ** (np.arange(-13, 8) / 3.0)            # 50 Hz - 5 kHz
@@ -155,7 +156,7 @@ def _exact(spec, hs, hr, d, c, f):
     return 1.0 + q * r1 / r2 * np.exp(-2j * np.pi * f * (r2 - r1) / c)
 
 
-def analytic(spec, hs, hr, d, c, spherical):
+def analytic(spec, hs, hr, d, c, spherical, roughness=0.0):
     f = np.linspace(1.0, FS / 2, 200001)
     r1 = np.hypot(d, hr - hs)
     r2 = np.hypot(d, hr + hs)
@@ -165,12 +166,18 @@ def analytic(spec, hs, hr, d, c, spherical):
     q = (ground.spherical_reflection(f, beta, mu, r2, c) if spherical
          else (mu - beta) / (mu + beta))
     k = 2 * np.pi * f / c
-    p = np.exp(-1j * k * r1) / r1 + q * np.exp(-1j * k * r2) / r2
+    fr = ground.roughness_coherence(f, roughness, mu, c) if roughness > 0 else 1.0
+    p = np.exp(-1j * k * r1) / r1 + fr * q * np.exp(-1j * k * r2) / r2
     p0 = np.exp(-1j * k * r1) / r1
+    # Nord2000 Part 1 Eq. 137: the share lost by the coherent reflection adds incoherently,
+    # with the random-incidence reflection R^2 = 1 - alpha
+    e = np.abs(p) ** 2
+    if roughness > 0:
+        e = e + (1.0 - fr ** 2) * (1.0 - alpha_random(beta)) / r2 ** 2
     out = []
     for fc in THIRDS:
         m = (f >= fc * 2 ** (-1 / 6)) & (f < fc * 2 ** (1 / 6))
-        out.append(10 * np.log10(np.mean(np.abs(p[m]) ** 2) / np.mean(np.abs(p0[m]) ** 2)))
+        out.append(10 * np.log10(np.mean(e[m]) / np.mean(np.abs(p0[m]) ** 2)))
     return np.array(out)
 
 
@@ -180,14 +187,22 @@ def main():
     ap.add_argument("--depth", type=float, default=1.0, help="porous layer depth, m")
     ap.add_argument("--ground", default="", help="Nord2000 ground class A-G (Delany-Bazley, "
                     "semi-infinite) instead of --sigma and --depth")
+    ap.add_argument("--roughness", default="", help="Nord2000 roughness class N/S/M/L or m "
+                    "(with --ground)")
+    ap.add_argument("--alpha-e", type=float, default=None, help="two-parameter model: rate "
+                    "of porosity change, 1/m (with --ground)")
     ap.add_argument("--hs", type=float, default=1.0)
     ap.add_argument("--hr", type=float, default=1.5)
     ap.add_argument("--dist", type=float, nargs="+", default=[10.0, 25.0])
     ap.add_argument("--fc", type=float, default=600.0, help="wave band limit, Hz")
     ap.add_argument("--no-fdtd", action="store_true")
+    ap.add_argument("--seeds", type=int, default=1, help="noise draws averaged (rough ground)")
     a = ap.parse_args()
-    spec = (ground.ground_spec(a.ground) if a.ground
+    rough = (a.roughness if a.roughness.upper() in ground.ROUGHNESS_CLASSES
+             else float(a.roughness)) if a.roughness else None
+    spec = (ground.ground_spec(a.ground, roughness=rough, alpha_e=a.alpha_e) if a.ground
             else {"layers": [{"model": "miki", "sigma": a.sigma, "d": a.depth}]})
+    sr = float(spec.get("roughness", 0.0))
     if a.ground:
         a.sigma = spec["layers"][0]["sigma"]
     for d in a.dist:
@@ -195,23 +210,39 @@ def main():
         rcv = ReceiverDef("R", np.array([d, 0.0, a.hr]))
         t_max = round(1.2 * np.hypot(d, a.hs + a.hr) / 340.0 + 0.1, 2)
         cfg = BakeConfig(fs=FS, n_rays=2000, ism_order=1, diffraction=False, max_time=t_max,
-                         normalize=False, ambisonic_order=1, rbs_scattering=False)
+                         normalize=False, ambisonic_order=1, rbs_scattering=False,
+                         spherical_reflection=False)
         c = config_speed_of_sound(cfg)
         free = omni(bake(ground_scene(spec, d, -500.0), src, rcv, cfg))
         ga = third_levels(omni(bake(ground_scene(spec, d, 0.0), src, rcv, cfg)), free)
         cfg_s = replace(cfg, spherical_reflection=True)
-        ga_s = third_levels(omni(bake(ground_scene(spec, d, 0.0), src, rcv, cfg_s)), free)
+        free_s = omni(bake(ground_scene(spec, d, -500.0), src, rcv, cfg_s))
+        # a rough ground's diffuse share is one noise draw per seed: average the energy
+        ga_s = 10 * np.log10(np.mean([10 ** (third_levels(omni(bake(
+            ground_scene(spec, d, 0.0), src, rcv, replace(cfg_s, seed=1234 + i))), free_s) / 10)
+            for i in range(a.seeds)], axis=0))
         an_p = analytic(spec, a.hs, a.hr, d, c, spherical=False)
-        an_s = analytic(spec, a.hs, a.hr, d, c, spherical=True)
+        an_s = analytic(spec, a.hs, a.hr, d, c, spherical=True, roughness=sr)
         rows = {"rays, plane (engine)": ga, "rays, spherical (eng.)": ga_s,
                 "analytic, plane wave": an_p, "analytic, spherical": an_s}
         if not a.no_fdtd:
             rows.update(wave_rows(spec, a.hs, a.hr, d, c, a.fc))
-        print("\nd = %.0f m, hs = %.2f m, hr = %.2f m, sigma = %.0f kPa.s/m2: level re free "
-              "field (dB)" % (d, a.hs, a.hr, a.sigma / 1e3))
+        print("\nd = %.0f m, hs = %.2f m, hr = %.2f m, sigma = %.0f kPa.s/m2%s: level re free "
+              "field (dB)" % (d, a.hs, a.hr, a.sigma / 1e3,
+                              ", roughness %.2f m" % sr if sr > 0 else ""))
         print("%-24s" % "third octave (Hz)" + "".join("%7.0f" % f for f in THIRDS))
         for name, v in rows.items():
             print("%-24s" % name + "".join("%7.1f" % x for x in v))
+        # octaves (the echogram's resolution, where the incoherent part of a rough ground lives)
+        w = THIRDS / THIRDS.sum()
+        for name in ("rays, spherical (eng.)",):
+            dev = []
+            for i in range(1, len(THIRDS) - 1, 3):
+                sl = slice(i - 1, i + 2)
+                eng = np.sum(w[sl] * 10 ** (rows[name][sl] / 10)) / np.sum(w[sl])
+                ref = np.sum(w[sl] * 10 ** (rows["analytic, spherical"][sl] / 10)) / np.sum(w[sl])
+                dev.append(10 * np.log10(eng / ref))
+            print("%-24s octaves %s dB" % (name + " - analytic", " ".join("%+.1f" % x for x in dev)))
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ simulation settings. In a script you set it yourself. See
 | `max_bounces` | 200 | Reflections per ray. It grows with the response length. |
 | `ism_order` | 2 | Order of the image sources |
 | `complex_reflection` | True | Use the complex reflection factor on image sources |
-| `spherical_reflection` | False | Spherical-wave reflections on image sources, and ground paths around diffracting edges, for the ground effect and screens. The web app turns it on in open scenes. |
+| `spherical_reflection` | None | Spherical-wave reflections on image sources, and ground paths around diffracting edges, for the ground effect and screens. None: on in an open scene (test rays escape), off in a closed room. |
 | `diffraction` | True | First-order edge diffraction (UTD) |
 | `max_edges` | 64 | Most edges used for diffraction |
 | `max_planes` | 48 | Most planes used for image sources |
@@ -49,6 +49,8 @@ simulation settings. In a script you set it yourself. See
 | `fdtd_conformal_aniso` | False | The anisotropic form of the correction |
 | `fdtd_source_directivity` | True | Directive sources in the wave band (monopole and dipole) |
 | `fdtd_align` | False | Turn the grid to follow the scene |
+| `fdtd_box` | None | Corners of the wave domain. The geometry runs on through the absorbing layer: a large ground acts as an infinite one. |
+| `fdtd_ppw` | 9.0 | Grid points per wavelength at 1.5 times the transition. Long grazing ground paths need more. |
 | `infer_materials` | True | Give α-only materials a physical model for the wave band |
 | `wave_ear_half` | 0.0 | Half spacing of the two ear probes. 0 means from the head. |
 | `wave_head` | `"ears"` | `"ears"`, `"hrtf"` (first order) or `"hrtf2"` (second order) |

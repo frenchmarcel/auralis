@@ -164,13 +164,17 @@ def cached_conformal(scene, vox, **kwargs):
 
 
 def voxelize(scene, dx: float, src_pos, margin_cells: int = 2,
-             include_points=None) -> VoxelGrid:
+             include_points=None, box=None) -> VoxelGrid:
     """Voxelize the scene: a cell within 0.87 dx of a triangle is solid
-    (material of the nearest one); air = component connected to source."""
+    (material of the nearest one); air = component connected to source.
+    box: (lo, hi) corners of the domain instead of the bounding box of the geometry and the
+    points. The geometry is cut at the box, margin included."""
     tv = np.asarray(scene.tri_verts, dtype=np.float64)
     lo = tv.reshape(-1, 3).min(axis=0)
     hi = tv.reshape(-1, 3).max(axis=0)
-    if include_points is not None:
+    if box is not None:
+        lo, hi = np.asarray(box[0], dtype=np.float64), np.asarray(box[1], dtype=np.float64)
+    elif include_points is not None:
         # the domain must contain source and receivers (open scenes:
         # the bbox of the geometry alone can be flat or too small)
         pts = np.atleast_2d(np.asarray(include_points, dtype=np.float64))
@@ -538,6 +542,36 @@ class _GridTimer:
             print("[Auralis] FdtdGrid: " + ", ".join(self.parts))
 
 
+def _cpml_channel_damping(pml, ii, touch_solid, shape, lam):
+    """Volume damping for the cells of the absorbing layer that touch a solid.
+
+    A solid inside the CPML (a ground that runs into it) leaves its neighbour cells out of
+    the CPML tables, or a GKS edge mode grows. Without damping they form an undamped
+    channel along the solid, and the mode grows anyway. They get the layer's own profile as
+    a volume loss (s = sigma dt / 2, summed over the axes). Returns (cells, s) or None:
+    nothing changes when no solid enters the layer."""
+    if pml is None or int(pml.get("n", 0)) <= 0 or not touch_solid.any():
+        return None
+    npml = int(pml["n"])
+    m_gr = float(pml.get("m", 3.0))
+    R0 = float(pml.get("R0", 1e-6))
+    smax_dt = (m_gr + 1.0) * (-np.log(R0)) * lam / (2.0 * npml)
+    shp = tuple(int(v) for v in pml.get("shape", shape))
+    off_p = pml.get("offset")
+    sel = np.flatnonzero(touch_solid)
+    ic = ii[sel] if off_p is None else ii[sel] + np.asarray(off_p, dtype=np.int32)
+    eff = max(npml - 1, 1)
+    sd = np.zeros(len(sel))
+    for a in range(3):
+        u = np.clip(np.maximum((npml - 1 - ic[:, a]) / eff, (ic[:, a] - (shp[a] - npml)) / eff),
+                    0.0, 1.0)
+        sd += smax_dt * u ** m_gr
+    keep = sd > 0.0
+    if not keep.any():
+        return None
+    return sel[keep], 0.5 * sd[keep]
+
+
 class FdtdGrid:
     """Update structure: flattened air cells, neighbors with a ghost
     slot for solid faces, per-cell coefficients and Gamma."""
@@ -613,6 +647,7 @@ class FdtdGrid:
             pos = ((ii[:, 0].astype(np.int64) + 1) * sx
                    + (ii[:, 1].astype(np.int64) + 1) * sy + (ii[:, 2] + 1))
         shape_i = np.asarray(air.shape, dtype=np.int32)
+        touch_solid = np.zeros(self.n_air, dtype=bool)
         for f, (ox, oy, oz) in enumerate(offs):
             off_f = np.array([ox, oy, oz], dtype=np.int32)
             if nat:
@@ -634,6 +669,7 @@ class FdtdGrid:
                 inb = flat[wi] == -1                   # solid inside the grid
                 del flat
             if len(wi):
+                touch_solid[wi[inb]] = True
                 jw = ii[wi[inb]] + off_f
                 m = np.full(len(wi), -1, dtype=np.int32)
                 m[inb] = vox.mat[jw[:, 0], jw[:, 1], jw[:, 2]]
@@ -692,6 +728,10 @@ class FdtdGrid:
             self.s_half = 0.5 * sg * self.dt
         else:
             self.s_half = np.zeros(self.n_air)
+        chan = _cpml_channel_damping(pml, ii, touch_solid, vox.shape, self.lam)
+        if chan is not None:
+            self.s_half[chan[0]] += chan[1]
+        del touch_solid
         if phi is not None:
             ph = np.asarray(phi, dtype=np.float64)
             if ph.shape != (self.n_air,):
@@ -2139,7 +2179,8 @@ def run_low_band(scene, src_pos, rcv_pos, fs: int, duration: float,
                  missing_rcv_ok: bool = False,
                  domain_points=None,
                  subcell_openings=None,
-                 src_surface=None) -> Tuple[np.ndarray, FdtdInfo]:
+                 src_surface=None,
+                 domain_box=None) -> Tuple[np.ndarray, FdtdInfo]:
     """Low-band IR (1/d convention) at fs, length round(duration * fs), and an FdtdInfo.
 
     rcv_pos: one position gives (n,), a list gives (n, n_rcv).
@@ -2157,10 +2198,23 @@ def run_low_band(scene, src_pos, rcv_pos, fs: int, duration: float,
     subcell_openings: join enclosed pockets through gaps thinner than the cell, closed
     domains only (None: AURALIS_FDTD_SUBCELL, on).
     src_surface: material (name or index) of a vibrating surface replacing the point source.
-    src_pos then only anchors the air. Closed domains only, omni."""
+    src_pos then only anchors the air. Closed domains only, omni.
+    domain_box: (lo, hi) corners of the wave domain. The geometry is cut there and goes on
+    through the absorbing layer: a ground larger than the box acts as an infinite one, with
+    no edge to diffract. The source and the receivers must be inside."""
     t0 = time.time()
+    if domain_box is not None:
+        lo_b, hi_b = (np.asarray(v, dtype=np.float64) for v in domain_box)
+        pts_b = np.vstack([np.asarray(src_pos, np.float64)[None]]
+                          + [np.atleast_2d(np.asarray(rcv_pos, np.float64))])
+        if not (np.all(hi_b > lo_b) and np.all(pts_b >= lo_b) and np.all(pts_b <= hi_b)):
+            raise ValueError("domain_box must hold the source and every receiver")
+        domain_box = (lo_b, hi_b)
     if align_grid is None:
         align_grid = os.environ.get("AURALIS_FDTD_ALIGN", "0") == "1"
+    if align_grid and domain_box is not None:
+        print("[Auralis] FDTD grid alignment IGNORED: a domain box is given")
+        align_grid = False
     if align_grid:
         th, gain = grid_alignment_angle(scene)
         if th != 0.0:
@@ -2191,7 +2245,7 @@ def run_low_band(scene, src_pos, rcv_pos, fs: int, duration: float,
                else [src_pos] + [np.asarray(q, dtype=np.float64) for q in domain_points])
     single = np.asarray(rcv_pos, dtype=np.float64).ndim == 1
     vox = voxelize(scene, dx, src_pos,
-                   include_points=dom_pts)
+                   include_points=dom_pts, box=domain_box)
     a = vox.air                          # air on a face of the box: open domain
     touches = bool(a[0].any() or a[-1].any() or a[:, 0].any() or a[:, -1].any()
                    or a[:, :, 0].any() or a[:, :, -1].any())
@@ -2209,7 +2263,7 @@ def run_low_band(scene, src_pos, rcv_pos, fs: int, duration: float,
         marge = (pml_cells + 2) if absorber == "cpml" \
             else (sponge_cells + 2)
         vox = voxelize(scene, dx, src_pos, margin_cells=marge,
-                       include_points=dom_pts)
+                       include_points=dom_pts, box=domain_box)
         if absorber == "cpml":
             pml_cfg = {"n": int(pml_cells)}
         else:
@@ -2256,6 +2310,14 @@ def run_low_band(scene, src_pos, rcv_pos, fs: int, duration: float,
     area_stair_pct = 0.0
     aniso = bool(conformal_aniso) or os.environ.get(
         "AURALIS_FDTD_CONFORMAL_ANISO", "0") == "1"
+    if domain_box is not None and conf_on and not aniso:
+        # the default correction spreads volume over several layers, which then enter the
+        # CPML tables where a ground runs into the layer: a fast instability (the cut layer of
+        # the anisotropic one stays out of them)
+        print("[Auralis] domain box: the geometry runs into the absorbing layer, where the "
+              "default conformal correction is unstable: the anisotropic one is used")
+        aniso = True
+        conformal_aniso = True
     # a scene beyond the int32 indices of one grid is built slab by slab (slabs.py); the
     # conformal corrections are then computed on each slab's sub box
     slab_mode = (os.environ.get("AURALIS_FDTD_SLABS", "0") == "1"

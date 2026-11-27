@@ -56,6 +56,9 @@ You can create a material in several ways:
   rock wool density instead of the flow resistivity.
 - **Perforated, slotted or micro-perforated panel.** Give the hole size or the
   slot width, the panel thickness, the open area and the cavity depth.
+- **Outdoor ground.** Pick a Nord2000 ground class or give a flow resistivity.
+  You can add a porosity rate for the two-parameter model and a roughness
+  class. See {doc}`../engine/outdoor-ground`.
 - **Measured complex data.** Import a table of normal-incidence impedance or
   reflection factor over frequency.
 

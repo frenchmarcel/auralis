@@ -33,6 +33,7 @@ class AcousticEvent:
     planes: object = None         # patch index of each reflection, source side first
     exact: bool = False           # long filter that keeps low-frequency detail
     wedge: object = None          # (phi, phi0, n, L, R0, Rn, c) of a diffracted event
+    incoherent: object = None     # per-band energy a rough ground sends to the diffuse field
 
 
 def _unit(v):
@@ -304,10 +305,14 @@ def _validate_path(scene, planes, tri_plane, tracer, src, rcv, seq,
         tri, t_hit, _n = tracer.cast(point + d * (_EPS * 4), d, dist - _EPS * 8)
         if tri >= 0:
             return None
+    inc = None
     if adm_table is not None:
-        from .reflection import band_R_mag
+        from .reflection import band_R_mag, incoherent_energy
         if spherical:
             mu_list = [(m, mu, L, c) for m, mu in mu_list]
+            inc = incoherent_energy(mu_list, adm_table)
+            if inc is not None:
+                inc = inc * np.maximum(air_e, 0.0) / (L * L)
         amps = band_R_mag(mu_list, adm_table) \
             * np.sqrt(np.maximum(air_e, 0.0)) / L
     return AcousticEvent(time=L / c, amps=amps.astype(np.float64),
@@ -317,4 +322,5 @@ def _validate_path(scene, planes, tri_plane, tracer, src, rcv, seq,
                          bounces=(list(mu_list) if adm_table is not None
                                   else None),
                          exact=bool(spherical and adm_table is not None),
+                         incoherent=inc,
                          points=[p.copy() for p in hits[::-1]], planes=tuple(seq))

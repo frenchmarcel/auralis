@@ -20,7 +20,7 @@ from .level import dba_total, strength_g
 from .metrics import _decay_time, events_to_hist, lateral_metrics, schroeder_edc
 from .pipeline import (BakeConfig, SourceDef, _select_engine, apply_source_directivity,
                        effective_max_bounces, estimate_max_time, hybrid_level_shift_db,
-                       scene_cached)
+                       add_incoherent, resolve_spherical, scene_cached)
 from .reflection import build_admittance_table
 from . import speech
 
@@ -94,7 +94,9 @@ def wave_band_points(scene, source: SourceDef, points, cfg: BakeConfig):
                                 boundary_absorber=cfg.fdtd_absorber,
                                 conformal=bool(cfg.fdtd_conformal),
                                 conformal_aniso=bool(cfg.fdtd_conformal_aniso),
-                                align_grid=bool(cfg.fdtd_align), src_axis=axis,
+                                align_grid=bool(cfg.fdtd_align), domain_box=cfg.fdtd_box,
+                                ppw=float(cfg.fdtd_ppw),
+                                src_axis=axis,
                                 src_first_order=a_bands, missing_rcv_ok=True)
     except (ValueError, RuntimeError) as exc:
         print("[Auralis] receiver grid: wave band IMPOSSIBLE (%s); G and SPL stay those of "
@@ -145,6 +147,7 @@ def grid_metrics(scene, source: SourceDef, points, cfg: BakeConfig = None,
     sfwd = sfwd / max(float(np.linalg.norm(sfwd)), 1e-12)
     g_lin2 = 10.0 ** (float(source.gain_db) / 10.0)
     _name, engine, tracer = _select_engine(scene, cfg.engine)
+    sph = resolve_spherical(scene, cfg, tracer, src)
     planes, tri_plane = extract_planes(scene, cfg.max_planes)
     edges = (list(scene_cached(scene, extract_edges, max_edges=cfg.max_edges))
              if cfg.diffraction else [])
@@ -169,13 +172,13 @@ def grid_metrics(scene, source: SourceDef, points, cfg: BakeConfig = None,
             if cfg.ism_order > 0:
                 events += compute_image_sources(scene, planes, tri_plane, tracer, src, rcv,
                                                 cfg.ism_order, air, c, adm_table=adm,
-                                                spherical=cfg.spherical_reflection)
+                                                spherical=sph)
             if edges:
                 events += compute_diffraction(scene, tracer, edges, src, rcv, air, c,
                                               refl_amp=refl_a,
-                                              planes=(planes if cfg.spherical_reflection
-                                                      else None), tri_plane=tri_plane,
-                                              adm_table=adm, spherical=cfg.spherical_reflection)
+                                              planes=planes if sph else None,
+                                              tri_plane=tri_plane, adm_table=adm,
+                                              spherical=sph)
             if rbs_dims is not None:
                 _rbs.weight_image_sources(events, scene, rbs_dims, _BC, c, src, rcv)
             events = [ev for ev in events if ev.time < max_time]
@@ -199,6 +202,7 @@ def grid_metrics(scene, source: SourceDef, points, cfg: BakeConfig = None,
                     dir_table=(dirv.table if dirv is not None else None),
                     rcv_radius=float(cfg.rcv_radius if rcv_radii is None else rcv_radii[i]),
                     rbs=rbs_dims)
+            add_incoherent(events, hist, dirs, cfg.bin_dt)
             hist = hist * g_lin2
             dirs = dirs * g_lin2
             for ev in events:

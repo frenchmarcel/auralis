@@ -318,6 +318,23 @@ export interface PorousBody {
 
 export type WoolKind = 'glass' | 'rock';
 
+/** Outdoor ground: a Nord2000 class (A-G) or an effective flow resistivity (Pa·s/m²). */
+export interface GroundBody {
+  ground_class?: string;
+  sigma?: number;
+  /** Two-parameter model: rate of porosity change with depth (1/m); null = Delany-Bazley. */
+  alpha_e?: number | null;
+  /** Nord2000 roughness class: N, S, M or L. */
+  roughness?: string;
+}
+
+export interface NewGroundMaterialBody extends GroundBody {
+  name: string;
+  category: string;
+  description: string;
+  scattering: number;
+}
+
 /** POST /materials/wool-sigma: flow resistivity of a mineral wool from its density (Pa·s/m², kg/m³). */
 export interface WoolSigma {
   sigma: number;
@@ -1160,6 +1177,8 @@ export const api = {
     request<PorousPreview>('POST', '/materials/porous-preview', body),
   createPorousMaterial: (body: NewPorousMaterialBody) =>
     request<Material>('POST', '/materials/porous', body),
+  groundPreview: (body: GroundBody) => request<{ absorption: number[] }>('POST', '/materials/ground-preview', body),
+  createGroundMaterial: (body: NewGroundMaterialBody) => request<Material>('POST', '/materials/ground', body),
   perforatedPreview: (body: PerforatedBody) =>
     request<{ absorption: number[] }>('POST', '/materials/perforated-preview', body),
   createPerforatedMaterial: (body: NewPerforatedMaterialBody) =>

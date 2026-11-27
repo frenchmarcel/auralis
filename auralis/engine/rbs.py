@@ -61,6 +61,8 @@ def weight_image_sources(events, scene, dims, band_hz, c, src, rcv):
                           scene.scattering[scene.tri_mat[t]])
             spec *= 1.0 - s_r
         ev.amps = ev.amps * np.sqrt(np.clip(spec, 0.0, 1.0))
+        if getattr(ev, "incoherent", None) is not None:
+            ev.incoherent = ev.incoherent * np.clip(spec, 0.0, 1.0)
     return events
 
 

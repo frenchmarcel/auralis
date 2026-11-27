@@ -189,3 +189,107 @@ def test_four_path_render_matches_the_closed_form_sum():
         m = (f >= x * 2 ** (-1 / 6)) & (f < x * 2 ** (1 / 6))
         e_dB = 10 * np.log10(np.sum(np.abs(H[m]) ** 2) / np.sum(np.abs(P[m]) ** 2))
         assert abs(e_dB) < 0.3, (x, e_dB)
+
+
+def test_spherical_reflection_turns_itself_on_in_open_scenes_only():
+    from auralis.engine.geometry import NumpyRaycaster
+    from auralis.engine.pipeline import resolve_spherical
+
+    def box(lx, ly, lz):
+        v = np.array([[0, 0, 0], [lx, 0, 0], [lx, ly, 0], [0, ly, 0], [0, 0, lz], [lx, 0, lz],
+                      [lx, ly, lz], [0, ly, lz]], float)
+        t = []
+        for a, b, c, d in [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6),
+                           (3, 0, 4, 7)]:
+            t += [[v[a], v[b], v[c]], [v[a], v[c], v[d]]]
+        return np.array(t)
+    al = np.full((1, 7), 0.1)
+    room = SceneData(box(6, 5, 3), np.zeros(12, np.int32), al, np.zeros_like(al),
+                     np.zeros_like(al), mat_names=["wall"])
+    field = _ground_scene(ground.ground_spec("C"), 10.0, 0.0)
+    src = np.array([2.0, 2.0, 1.5])
+    auto = BakeConfig()
+    assert auto.spherical_reflection is None
+    assert not resolve_spherical(room, auto, NumpyRaycaster(room), src)
+    assert resolve_spherical(field, auto, NumpyRaycaster(field), np.array([0.0, 0.0, 1.0]))
+    assert resolve_spherical(room, BakeConfig(spherical_reflection=True), None, src)
+    assert not resolve_spherical(field, BakeConfig(spherical_reflection=False), None, src)
+
+
+def test_roughness_coherence_follows_nord2000():
+    from auralis.engine.ground import roughness_coherence
+    c = 343.0
+    assert np.allclose(roughness_coherence([50.0, 5000.0], 0.0, 0.3, c), 1.0)
+    # continuous at both joints of the piecewise g(X), X = k sigma_r sin(psi)
+    for x0 in (0.026686, 0.115448):
+        f = np.array([x0 * (1 - 1e-9), x0 * (1 + 1e-9)]) * c / (2 * np.pi)
+        a, b = roughness_coherence(f, 1.0, 1.0, c)
+        assert abs(a - b) < 1e-6
+    fr = roughness_coherence(np.geomspace(10.0, 20000.0, 400), 0.5, 0.2, c)
+    assert np.all(np.diff(fr) <= 1e-12) and fr[0] > 0.99 and fr[-1] < 1e-6
+
+
+def test_variable_porosity_matches_its_usual_numerical_form():
+    f = np.geomspace(50.0, 5000.0, 20)
+    z = poromat.variable_porosity(f, 200e3, 10.0)
+    usual = 0.436 * (1 - 1j) * np.sqrt(200e3 / f) - 19.48j * 10.0 / f
+    assert np.abs(z / usual - 1.0).max() < 0.01
+    spec = ground.ground_spec("D", alpha_e=10.0)
+    assert np.all(poromat.surface_impedance(spec, f).real > 0.0)
+
+
+def test_rough_ground_matches_nord2000_in_octaves():
+    """Coherent part Fr Q, incoherent part (1 - Fr^2) R^2 (Nord2000 Part 1, Eq. 137), the
+    engine's diffuse share averaged over noise draws."""
+    from auralis.engine.reflection import alpha_random
+    spec = ground.ground_spec("D", roughness="M")
+    d, hs, hr = 25.0, 1.0, 1.5
+    src, rcv = SourceDef("S", np.array([0.0, 0.0, hs])), ReceiverDef("R", np.array([d, 0.0, hr]))
+    base = BakeConfig(fs=FS, n_rays=200, ism_order=1, diffraction=False, max_time=0.2,
+                      normalize=False, ambisonic_order=1, rbs_scattering=False,
+                      spherical_reflection=True, n_threads=2)
+    c = config_speed_of_sound(base)
+    free = np.asarray(bake(_ground_scene(spec, d, -500.0), src, rcv, base).ambi[:, 0])
+    octs = np.array([125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0])
+    eng = []
+    for seed in range(6):
+        from dataclasses import replace
+        h = np.asarray(bake(_ground_scene(spec, d, 0.0), src, rcv,
+                            replace(base, seed=seed)).ambi[:, 0])
+        n = 1 << 16
+        H, H0 = np.fft.rfft(h, n), np.fft.rfft(free, n)
+        f = np.fft.rfftfreq(n, 1.0 / FS)
+        eng.append([np.sum(np.abs(H[(f >= x / np.sqrt(2)) & (f < x * np.sqrt(2))]) ** 2)
+                    / np.sum(np.abs(H0[(f >= x / np.sqrt(2)) & (f < x * np.sqrt(2))]) ** 2)
+                    for x in octs])
+    eng = 10 * np.log10(np.mean(eng, axis=0))
+    f = np.linspace(20.0, 6000.0, 60000)
+    r1, r2 = np.hypot(d, hr - hs), np.hypot(d, hr + hs)
+    mu = (hs + hr) / r2
+    beta = poromat.gamma_normal(spec, f)
+    q = ground.spherical_reflection(f, beta, mu, r2, c)
+    fr = ground.roughness_coherence(f, spec["roughness"], mu, c)
+    e = (np.abs(1.0 + fr * q * r1 / r2 * np.exp(-2j * np.pi * f * (r2 - r1) / c)) ** 2
+         + (1.0 - fr ** 2) * (1.0 - alpha_random(beta)) * (r1 / r2) ** 2)
+    ref = np.array([10 * np.log10(np.mean(e[(f >= x / np.sqrt(2)) & (f < x * np.sqrt(2))]))
+                    for x in octs])
+    assert np.abs(eng - ref).max() < 0.6, np.round(eng - ref, 2)
+
+
+def test_a_ground_through_the_absorbing_layer_stays_stable():
+    """A domain box cuts a large ground: it runs into the CPML, whose cells next to it get the
+    layer's damping as a volume loss. The response stays stable and nearly all its energy is
+    the direct sound and the ground reflection."""
+    from auralis.engine.fdtd import run_low_band
+    tv = np.array([[[-1e3, -1e3, 0.0], [1e3, -1e3, 0.0], [1e3, 1e3, 0.0]],
+                   [[-1e3, -1e3, 0.0], [1e3, 1e3, 0.0], [-1e3, 1e3, 0.0]]])
+    sc = SceneData(tv, np.zeros(2, np.int32), np.zeros((1, 7)), np.zeros((1, 7)),
+                   np.zeros((1, 7)), mat_names=["rigid"])
+    src, rcv = np.array([0.0, 0.0, 1.0]), np.array([4.0, 0.0, 1.5])
+    h, info = run_low_band(sc, src, rcv, fs=8000, duration=0.4, f_cross=150.0,
+                           speed_of_sound=343.0, max_cells=3_000_000,
+                           domain_box=((-3.0, -3.0, -0.3), (7.0, 3.0, 4.0)), pml_cells=20)
+    assert info.is_open and np.all(np.isfinite(h))
+    t = np.arange(len(h)) / 8000.0
+    late = np.sum(h[t > 0.06] ** 2) / np.sum(h ** 2)
+    assert late < 0.02

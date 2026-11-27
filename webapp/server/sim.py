@@ -164,7 +164,8 @@ def build_manifest(sim, mesh, library, open_scene=False):
             # a ground's own model: the wave band, the complex and spherical-wave
             # reflections; the rays its random-incidence alphas
             from auralis.engine.ground import ground_spec
-            d["phys"] = ground_spec(float(phys["sigma"]))
+            d["phys"] = ground_spec(float(phys["sigma"]), roughness=phys.get("roughness"),
+                                    alpha_e=phys.get("alpha_e"))
             d["absorption"] = list(m["absorption"])
         elif phys and phys.get("type") == "table":
             # measured complex admittance: the wave band and the complex reflections

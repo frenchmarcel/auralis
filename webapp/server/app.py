@@ -645,6 +645,55 @@ def create_perforated(body: dict):
                               physical=phys)
 
 
+def _ground_from_body(body: dict):
+    """(physical description, spec) of a ground from a request body: a Nord2000 class or a
+    flow resistivity (Pa.s/m2), an optional porosity rate alpha_e (1/m, two-parameter model)
+    and an optional roughness (Nord2000 class N/S/M/L or m)."""
+    from auralis.engine import ground
+    cls = (body.get("ground_class") or "").strip().upper() or None
+    sigma = float(ground.GROUND_CLASSES[cls][0]) if cls else float(body["sigma"])
+    alpha_e = body.get("alpha_e")
+    alpha_e = None if alpha_e in (None, "") else float(alpha_e)
+    rough = body.get("roughness")
+    if isinstance(rough, str) and rough.strip().upper() in ground.ROUGHNESS_CLASSES:
+        rough_m = ground.ROUGHNESS_CLASSES[rough.strip().upper()]
+    else:
+        rough_m = float(rough or 0.0)
+    try:
+        spec = ground.ground_spec(sigma, roughness=rough_m or None, alpha_e=alpha_e)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    phys = {"type": "ground", "sigma": sigma,
+            "model": "delany_bazley" if alpha_e is None else "variable_porosity"}
+    if cls:
+        phys["class"] = cls
+    if alpha_e is not None:
+        phys["alpha_e"] = alpha_e
+    if rough_m > 0.0:
+        phys["roughness"] = rough_m
+    return phys, spec
+
+
+@app.post("/api/materials/ground-preview")
+def ground_preview(body: dict):
+    """Random-incidence alpha of a ground, without creating anything."""
+    from auralis.engine import poromat
+    phys, spec = _ground_from_body(body)
+    return {"absorption": [round(float(x), 4) for x in poromat.alpha_bands(spec)],
+            "physical": phys}
+
+
+@app.post("/api/materials/ground")
+def create_ground(body: dict):
+    """Custom outdoor ground. Its model serves the wave band and the spherical-wave
+    reflections of open scenes; the rays use its random-incidence alpha."""
+    from auralis.engine import poromat
+    phys, spec = _ground_from_body(body)
+    return library.add_custom(body.get("name"), body.get("category", "Outdoor ground"),
+                              body.get("description"), poromat.alpha_bands(spec),
+                              body.get("scattering", 0.1), physical=phys)
+
+
 @app.post("/api/materials/table-preview")
 def preview_table_material(body: dict):
     """Random-incidence alpha per octave of a Z / R table, without creating anything."""
@@ -707,10 +756,15 @@ def material_details(mid: str):
                   "from the model" % phys.get("kind", "perforated"))
     elif phys.get("type") == "ground":
         from auralis.engine.ground import ground_spec
-        spec = ground_spec(float(phys["sigma"]))
+        spec = ground_spec(float(phys["sigma"]), roughness=phys.get("roughness"),
+                           alpha_e=phys.get("alpha_e"))
         gi, A, l = fit_admittance_complex(fg, poromat.gamma_normal(spec, fg))
-        source = ("ground model (Delany-Bazley, semi-infinite): phase known. In an open scene "
-                  "the image sources use the model itself, with the spherical-wave coefficient")
+        source = ("ground model (%s): phase known. In an open scene the image sources use the "
+                  "model itself, with the spherical-wave coefficient%s" % (
+                      "Delany-Bazley, semi-infinite" if phys.get("alpha_e") is None
+                      else "two-parameter variable porosity",
+                      "; roughness %.2f m makes the reflection partly diffuse"
+                      % phys["roughness"] if phys.get("roughness") else ""))
     elif phys.get("type") == "table":
         spec = {"gamma_table": phys["gamma_table"]}
         gi, A, l = fit_admittance_complex(fg, poromat._gamma_table(spec, fg))

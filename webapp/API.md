@@ -312,6 +312,9 @@ Display only: the solvers never see it.
   (`auralis:ground_A` to `auralis:ground_G`, snow to dense asphalt), with
   `physical = {"type": "ground", "class", "sigma" (Pa.s/m2), "model": "delany_bazley"}`:
   Delany-Bazley on a semi-infinite ground, alphas from the model, scattering 0.1.
+  A custom ground may add `"alpha_e"` (1/m: the two-parameter variable porosity model,
+  `"model": "variable_porosity"`) and `"roughness"` (m: part of each reflection becomes
+  diffuse, Nord2000).
 - A library may be absent from the list when its data is not on disk. The examples add
   the local libraries `odeon_rooms` (the Odeon halls' own materials) and `bras` (the
   BRAS rooms' materials), both `"redistributable": false`.
@@ -330,6 +333,8 @@ Custom materials:
 | POST | `/api/materials/porous` | preview body + `"name", "category", "description", "scattering"` | Material. From a wool, `physical.sigma_from` keeps the wool, density, band and law (shown in the details' `phase_source`). |
 | POST | `/api/materials/perforated-preview` | `{"kind": "perforated" \| "slotted" \| "mpp", "size_mm" (hole diameter or slot width), "t_mm", "open_pct", "plenum_mm", "wool_mm"?, "wool_sigma"?, "fleece_rayl"?}` | `{"absorption": [7]}` |
 | POST | `/api/materials/perforated` | preview body + `"name", "category", "description", "scattering"` | Material, `physical.type = "perforated"` |
+| POST | `/api/materials/ground-preview` | `{"ground_class": "A".."G"}` or `{"sigma"}` (Pa.s/m2), optional `"alpha_e"` (1/m), `"roughness"` (`"N"`/`"S"`/`"M"`/`"L"` or m) | `{"absorption": [7], "physical"}` |
+| POST | `/api/materials/ground` | preview body + `"name", "category", "description", "scattering"` | Material, `physical.type = "ground"` |
 | DELETE | `/api/materials/{id}` | none | ok (custom only, else 400) |
 | PATCH | `/api/materials/{id}` | `{"name"}` | Material: renamed, **same id** (custom only, else 400, and 404 if unknown) |
 | POST | `/api/materials/{id}/duplicate` | `{"name"?}` (body optional) | Material: a new `custom:…` copy of ANY material |

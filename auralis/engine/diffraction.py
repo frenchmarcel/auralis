@@ -543,7 +543,13 @@ def _one_path(ed, sv, rv, src, rcv, img_s, img_r, pid, pl, k, tracer, tri_plane,
     Dc = utd_coefficient(phi, phi0, ed.n, k, L, R0=R0, Rn=Rn)
     amps = np.abs(Dc) / np.sqrt(sp * s * (sp + s))
     amps *= np.sqrt(air_energy_factor(sp + s, air_db_per_m))
+    inc = None
     if adm_table is not None:
+        if spherical:
+            from .reflection import incoherent_energy
+            inc = incoherent_energy(bounces, adm_table)
+            if inc is not None:
+                inc = inc * amps ** 2
         amps = amps * band_R_mag(bounces, adm_table)
     else:
         amps = amps * refl[mat] ** len(bounces)
@@ -553,4 +559,4 @@ def _one_path(ed, sv, rv, src, rcv, img_s, img_r, pid, pl, k, tracer, tri_plane,
                          order=1 + len(bounces), kind="diffracted", emit_dir=emit,
                          bounces=bounces if adm_table is not None else None, points=pts,
                          exact=bool(spherical and adm_table is not None),
-                         wedge=(phi, phi0, ed.n, L, R0, Rn, float(c)))
+                         wedge=(phi, phi0, ed.n, L, R0, Rn, float(c)), incoherent=inc)
