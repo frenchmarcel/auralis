@@ -73,6 +73,7 @@ user-guide/examples
 engine/overview
 engine/wave-solver
 engine/geometrical-solver
+engine/outdoor-ground
 engine/hybrid
 engine/moving-sources
 engine/binaural-ambisonics

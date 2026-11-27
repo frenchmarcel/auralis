@@ -32,7 +32,7 @@ listener head and the speech level for the STI are set here too.
 | Rays | 200 000 | Number of rays per source |
 | Diffraction | on | First-order edge diffraction (UTD) |
 | Conformal correction | on | True wall positions in the wave grid (see {doc}`../engine/wave-solver`) |
-| Open scene | off | Declare an object in free field, a street or an outdoor space |
+| Open scene | off | Declare an object in free field, a street or an outdoor space. Image sources then use spherical-wave reflections (see {doc}`../engine/outdoor-ground`). |
 | Temperature, humidity | 20 °C, 50 % | Air absorption and speed of sound |
 | Head | Model | The head for binaural output (Model or FABIAN) |
 | Speech effort, background noise | normal, none | Used for the STI |

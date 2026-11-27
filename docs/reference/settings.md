@@ -24,6 +24,7 @@ simulation settings. In a script you set it yourself. See
 | `max_bounces` | 200 | Reflections per ray. It grows with the response length. |
 | `ism_order` | 2 | Order of the image sources |
 | `complex_reflection` | True | Use the complex reflection factor on image sources |
+| `spherical_reflection` | False | Spherical-wave reflections on image sources, and ground paths around diffracting edges, for the ground effect and screens. The web app turns it on in open scenes. |
 | `diffraction` | True | First-order edge diffraction (UTD) |
 | `max_edges` | 64 | Most edges used for diffraction |
 | `max_planes` | 48 | Most planes used for image sources |

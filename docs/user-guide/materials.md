@@ -30,7 +30,7 @@ material library opens.
 
 | Library | Content | Licence |
 |---|---|---|
-| Auralis presets | Common materials (concrete, plaster, glass, carpet, wood and more) | MIT |
+| Auralis presets | Common materials (concrete, plaster, glass, carpet, wood and more), and the seven Nord2000 ground classes (see {doc}`../engine/outdoor-ground`) | MIT |
 | pyroomacoustics | Tables from the literature (Vorländer) | MIT |
 | Odeon (local) | The Odeon library, with 63 Hz values | Local use with an Odeon licence only |
 | My materials | Your own materials | Yours |

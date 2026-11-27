@@ -308,6 +308,10 @@ Display only: the solvers never see it.
   inferred model, or why none was kept), `null` otherwise.
 - `physical` is `null` or a description of the physical model used by the wave band,
   e.g. `{"type": "porous", "model": "miki", "sigma": 15000, "thickness_mm": 50, "air_gap_mm": 100}`.
+- The `auralis` library has the seven Nord2000 ground classes, category `Outdoor ground`
+  (`auralis:ground_A` to `auralis:ground_G`, snow to dense asphalt), with
+  `physical = {"type": "ground", "class", "sigma" (Pa.s/m2), "model": "delany_bazley"}`:
+  Delany-Bazley on a semi-infinite ground, alphas from the model, scattering 0.1.
 - A library may be absent from the list when its data is not on disk. The examples add
   the local libraries `odeon_rooms` (the Odeon halls' own materials) and `bras` (the
   BRAS rooms' materials), both `"redistributable": false`.
@@ -552,6 +556,13 @@ the stored Simulation. `DELETE` removes it.
   band decays by that many dB + 10 dB (Eyring per band). `ir_length_s` wins when both are
   set.
 - `grid_rays` (1000–2 000 000, default 50 000): rays per receiver-grid point.
+- `spherical_reflection` (optional, default: the value of `open_scene`): spherical-wave
+  reflection coefficients on the image sources, with a longer filter for them and for the
+  direct sound. Over a ground near grazing incidence, plane-wave reflections miss the
+  ground effect by up to 10 dB. Diffracting edges also get the paths that reflect on a
+  plane before and/or after the edge (a screen on a ground: the four-path model), with the
+  complex UTD coefficient. Materials with a physical model (`ground`, `porous`,
+  `table`…) use the model itself; alpha-only ones their fitted admittance.
 - `rbs_scattering` (default `true`, can be turned off in Advanced mode): adds scattering
   from the size of each surface hit, so a material's scattering should be its roughness
   only (e.g. 0.05 for a smooth wall).
@@ -589,7 +600,8 @@ the stored Simulation. `DELETE` removes it.
   (an open-air theatre whose ground is a closed solid looks closed).
   - `true` declares an object in free field (panel, wedge, seats). It unlocks the wave
     solver (absorbing boundaries around the model), with the anisotropic conformal
-    correction.
+    correction. Its image sources use spherical-wave reflections: the ground effect of a
+    point source over a ground (see `spherical_reflection`).
   - `false` (default) means "a room with holes". The wave solver stays blocked, since
     energy would leak through them.
   - For a model that is not closed, any position at a valid distance from the surfaces

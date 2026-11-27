@@ -705,6 +705,12 @@ def material_details(mid: str):
                                          gamma_target=lambda ff: poromat.gamma_normal(spec, ff))
         source = ("%s panel model: phase known from the geometry (not measured), absorption "
                   "from the model" % phys.get("kind", "perforated"))
+    elif phys.get("type") == "ground":
+        from auralis.engine.ground import ground_spec
+        spec = ground_spec(float(phys["sigma"]))
+        gi, A, l = fit_admittance_complex(fg, poromat.gamma_normal(spec, fg))
+        source = ("ground model (Delany-Bazley, semi-infinite): phase known. In an open scene "
+                  "the image sources use the model itself, with the spherical-wave coefficient")
     elif phys.get("type") == "table":
         spec = {"gamma_table": phys["gamma_table"]}
         gi, A, l = fit_admittance_complex(fg, poromat._gamma_table(spec, fg))

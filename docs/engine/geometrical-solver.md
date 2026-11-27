@@ -17,12 +17,17 @@ an exact specular reflection with its arrival time and direction.
 - With a physical or measured material, the reflection uses the complex
   reflection factor at the true angle of incidence. This gives the right phase
   for the early reflections.
+- In an open scene, image sources use the spherical-wave reflection
+  coefficient of a point source. This gives the ground effect outdoors. See
+  {doc}`outdoor-ground`.
 
 ## Edge diffraction
 
 Sound bends around edges. Auralis computes first-order diffraction with the
 Uniform Theory of Diffraction (UTD). It matters behind obstacles and near the
-edges of balconies, screens and buildings.
+edges of balconies, screens and buildings. In an open scene, the paths that
+bounce on the ground before or after the edge are added too (see
+{doc}`outdoor-ground`).
 
 ## Stochastic ray tracing
 

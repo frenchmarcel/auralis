@@ -458,11 +458,8 @@ def build_admittance_table(absorption, mat_phys=None) -> dict:
         spec = mat_phys[m] if (mat_phys is not None
                                and m < len(mat_phys)) else None
         if spec:
-            from . import poromat
             fg = np.geomspace(40.0, 1.2 * CENTERS[-1], 60)
-            target = (poromat._gamma_table(spec, fg) if "gamma_table" in spec
-                      else poromat.gamma_normal(spec, fg))     # measured table / model
-            gi[m], A[m], l[m] = fit_admittance_complex(fg, target)
+            gi[m], A[m], l[m] = fit_admittance_complex(fg, exact_gamma(spec, fg))
         else:
             gi[m], A[m], l[m] = fit_admittance_random(ab[m], CENTERS)
         g_b = _gamma_of(CENTERS, gi[m], A[m], l[m])
@@ -470,11 +467,33 @@ def build_admittance_table(absorption, mat_phys=None) -> dict:
         a_tab = np.clip(ab[m], 0.0, ALPHA_RAND_MAX)
         anchor[m] = np.sqrt((1.0 - a_tab) / np.maximum(1.0 - a_fit, 1e-3))
         anchor[m] = np.clip(anchor[m], 0.25, 4.0)
-    out = {"gi": gi, "A": A, "l": l, "anchor": anchor}
+    phys = [(mat_phys[m] if (mat_phys is not None and m < len(mat_phys) and mat_phys[m])
+             else None) for m in range(nm)]
+    out = {"gi": gi, "A": A, "l": l, "anchor": anchor, "phys": phys}
     if len(_TABLE_CACHE) > 64:
         _TABLE_CACHE.clear()
     _TABLE_CACHE[key] = out
     return out
+
+
+def exact_gamma(spec: dict, f):
+    """Admittance of a physical material: its measured complex table, or its model."""
+    from . import poromat
+    return (poromat._gamma_table(spec, f) if "gamma_table" in spec
+            else poromat.gamma_normal(spec, f))
+
+
+def _cached_gamma(table: dict, mat: int, spec: dict, f):
+    """exact_gamma on a frequency grid, kept in the table: every event reuses the grid."""
+    f = np.asarray(f, dtype=np.float64)
+    key = (mat, len(f), float(f[0]), float(f[-1]))
+    cache = table.setdefault("_gamma_cache", {})
+    g = cache.get(key)
+    if g is None:
+        if len(cache) > 32:
+            cache.clear()
+        g = cache[key] = exact_gamma(spec, f)
+    return g
 
 
 def refl_coeff(mu, mat: int, table: dict, f):
@@ -483,14 +502,43 @@ def refl_coeff(mu, mat: int, table: dict, f):
     return (mu - g) / (mu + g)
 
 
+def bounce_coeff(bounce, table: dict, f):
+    """Complex reflection of one bounce and its per-band anchor.
+
+    A bounce is (mat, mu) for a plane wave, or (mat, mu, r2, c) for the spherical wave of a
+    point source, r2 being the unfolded path length. The spherical form uses the exact
+    admittance of a physical material, which needs no anchor, and the fitted one otherwise.
+    """
+    mat, mu = bounce[0], bounce[1]
+    if len(bounce) < 4:
+        return refl_coeff(mu, mat, table, f), table["anchor"][mat]
+    from .ground import spherical_reflection
+    spec = table.get("phys", [None] * (mat + 1))[mat]
+    if spec:
+        g, anc = _cached_gamma(table, mat, spec, f), np.ones(N_BANDS)
+    else:
+        g, anc = _gamma_of(f, table["gi"][mat], table["A"][mat], table["l"][mat]), \
+            table["anchor"][mat]
+    return spherical_reflection(f, g, mu, bounce[2], bounce[3]), anc
+
+
 def band_R_mag(bounces, table: dict) -> np.ndarray:
     """Per-band product of the ANCHORED |R| at the octave centers (for
     event amplitudes and the energy echogram)."""
     out = np.ones(N_BANDS)
-    for mat, mu in bounces:
-        out *= table["anchor"][mat] * np.abs(
-            refl_coeff(mu, mat, table, CENTERS))
+    for b in bounces:
+        r, anc = bounce_coeff(b, table, CENTERS)
+        out *= anc * np.abs(r)
     return out
+
+
+def _bounce_product(fq, bounces, table: dict) -> np.ndarray:
+    """Exact anchored product of the bounces' complex coefficients."""
+    P = np.ones(len(fq), dtype=np.complex128)
+    for b in bounces:
+        r, anc = bounce_coeff(b, table, fq)
+        P *= interp_band_gains(fq, anc) * r
+    return P
 
 
 def event_reflection_spectrum(freqs, bounces, table: dict) -> np.ndarray:
@@ -498,13 +546,85 @@ def event_reflection_spectrum(freqs, bounces, table: dict) -> np.ndarray:
     exact anchored product / interpolation at centers (|U| = 1 there)."""
     f = np.asarray(freqs, dtype=np.float64)
     fq = np.maximum(f, 1.0)
-    P = np.ones(len(f), dtype=np.complex128)
-    for mat, mu in bounces:
-        anc = interp_band_gains(fq, table["anchor"][mat])
-        P *= anc * refl_coeff(mu, mat, table, fq)
+    P = _bounce_product(fq, bounces, table)
     mags = band_R_mag(bounces, table)
     base = np.maximum(interp_band_gains(fq, mags), 1e-9)
     return P / base
+
+
+_CAP_WARNED = []
+
+
+def _lead_window(n, pre):
+    """Flat over the last half of the `pre` samples before the arrival and after it, with a
+    Hann rise before them and a Hann fall over the last fifth."""
+    w = np.ones(n)
+    rise = pre // 2
+    w[:rise] = 0.5 - 0.5 * np.cos(np.pi * np.arange(rise) / rise)
+    nt = n // 5
+    w[n - nt:] = 0.5 + 0.5 * np.cos(np.pi * np.arange(nt) / nt)
+    return w
+
+
+def _wedge_spectrum(fq, wedge):
+    """Complex UTD coefficient of a diffracted event on the grid fq, and its magnitude at the
+    band centres (already in the event's band amplitudes)."""
+    from .diffraction import utd_coefficient
+    phi, phi0, n, L, R0, Rn, c = wedge
+    k = 2.0 * np.pi * fq / c
+    r0 = None if R0 is None else interp_band_gains(fq, R0)
+    rn = None if Rn is None else interp_band_gains(fq, Rn)
+    d = utd_coefficient(phi, phi0, n, k, L, R0=r0, Rn=rn)
+    dc = np.abs(utd_coefficient(phi, phi0, n, 2.0 * np.pi * CENTERS / c, L, R0=R0, Rn=Rn))
+    return d, dc
+
+
+def long_event_fir(amps, bounces, table, fs: float, tol: float = 1e-3, wedge=None):
+    """FIR of an event's whole spectrum with low-frequency detail, and the tap of its arrival.
+
+    The spectrum is the exact product of the reflection coefficients (none for the direct
+    sound) and, for a diffracted event, of its complex UTD coefficient, times the smooth rest
+    of the band amplitudes (air, distance, directivity). Near grazing incidence the
+    low-frequency detail of a spherical-wave reflection (the ground effect) lasts tens of
+    milliseconds, which the short event filters would smooth away: at 25 m over grass they
+    keep a third of the 50 Hz reflection. The direct sound needs the same precision, or the
+    deep interference dips of a grazing path move by several dB. The window keeps 12 ms
+    before the arrival (the smooth part is zero-phase) and lasts at least 43 ms. Its length
+    doubles until the product alone is within `tol` from 40 Hz to 1 kHz.
+    """
+    pre = int(round(0.012 * fs))
+    amps = np.asarray(amps, dtype=np.float64)
+    n = 1 << int(np.ceil(np.log2(0.04 * fs)))
+    n_max = 1 << int(np.ceil(np.log2(0.2 * fs)))
+    while True:
+        nfft = 4 * n
+        f = np.fft.rfftfreq(nfft, 1.0 / fs)
+        fq = np.maximum(f, 1.0)
+        if not bounces and wedge is None:
+            u = interp_band_gains(fq, amps)
+            break
+        prod = (_bounce_product(fq, bounces, table) if bounces
+                else np.ones(len(fq), dtype=np.complex128))
+        mags = band_R_mag(bounces, table) if bounces else np.ones(N_BANDS)
+        if wedge is not None:
+            d, dc = _wedge_spectrum(fq, wedge)
+            prod = prod * d
+            mags = mags * dc
+        band = (f >= 40.0) & (f <= 1000.0)
+        ref = max(float(np.abs(prod[band]).max()), 1e-30)
+        g = np.roll(np.fft.irfft(prod, nfft), pre)[:n] * _lead_window(n, pre)
+        err = float(np.abs(np.fft.rfft(g, nfft)[band] * np.exp(2j * np.pi * f[band] * pre / fs)
+                           - prod[band]).max()) / ref
+        if err <= tol or n >= n_max:
+            if err > tol and not _CAP_WARNED:
+                _CAP_WARNED.append(True)
+                print("WARNING: event filter capped at %.0f ms, error %.2f %% below 1 kHz "
+                      "(reported once)" % (1e3 * n / fs, 100 * err), flush=True)
+            u = interp_band_gains(fq, amps / np.maximum(mags, 1e-12)) * prod
+            break
+        n *= 2
+    h = np.roll(np.fft.irfft(u, nfft), pre)[:n] * _lead_window(n, pre)
+    return h, pre
 
 
 def fit_wall_table(f_tgt, gamma_tgt, dt, lam, n_sections: int = 3,

@@ -68,6 +68,9 @@ class BakeConfig:
     max_bounces: int = 200
     ism_order: int = 2
     complex_reflection: bool = True   # complex R(theta, f) on speculars
+    # Point-source (spherical-wave) reflection on the image sources: the ground effect
+    # outdoors. Physical materials then use their exact admittance.
+    spherical_reflection: bool = False
     output_layout: str = "binaural"   # "binaural" (headphones) | "stereo"
     hrtf_path: str = ""               # measured HRTF .npz ('' = model)
     stereo_base_deg: float = 30.0     # half-angle of the speaker base
@@ -295,11 +298,14 @@ def bake(scene: SceneData, source: SourceDef, receiver: ReceiverDef,
             getattr(scene, 'mat_phys', None))
     events: List[AcousticEvent] = [
         compute_direct(scene, tracer, src, rcv, air, c)]
+    # the direct sound interferes with the spherical-wave reflections: same precision
+    events[0].exact = bool(cfg.spherical_reflection and adm_table is not None)
     planes, tri_plane = extract_planes(scene, cfg.max_planes)
     if cfg.ism_order > 0:
         events += compute_image_sources(scene, planes, tri_plane, tracer,
                                         src, rcv, cfg.ism_order, air, c,
-                                        adm_table=adm_table)
+                                        adm_table=adm_table,
+                                        spherical=cfg.spherical_reflection)
     n_edges = 0
     if cfg.diffraction:
         edges = list(scene_cached(scene, extract_edges, max_edges=cfg.max_edges))
@@ -307,7 +313,9 @@ def bake(scene: SceneData, source: SourceDef, receiver: ReceiverDef,
         if edges:
             events += compute_diffraction(
                 scene, tracer, edges, src, rcv, air, c,
-                refl_amp=np.sqrt(scene.reflectance()))
+                refl_amp=np.sqrt(scene.reflectance()),
+                planes=planes if cfg.spherical_reflection else None, tri_plane=tri_plane,
+                adm_table=adm_table, spherical=cfg.spherical_reflection)
     rbs_dims = None
     if cfg.rbs_scattering:
         from . import rbs as _rbs

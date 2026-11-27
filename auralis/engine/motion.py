@@ -18,9 +18,8 @@ from .bands import N_BANDS
 from .directivity import as_directivity
 from .diffraction import compute_diffraction, extract_edges
 from .geometry import NumpyRaycaster, SceneData, extract_planes
-from .reflection import (build_admittance_table,
-                         event_reflection_spectrum)
-from .ir_synthesis import _event_signs
+from .reflection import build_admittance_table
+from .ir_synthesis import _event_signs, event_correction, lengthen
 from .hrtf import (FIR_TAPS, _FIR_NFFT, event_fir_pair, event_fir_stereo,
                    itd_seconds, late_tail_binaural, late_tail_stereo,
                    place_fir, receiver_basis)
@@ -370,13 +369,18 @@ def render_moving(scene: SceneData, source, receiver, dry: np.ndarray,
             getattr(scene, 'mat_phys', None))   # cached
                if getattr(cfg, "complex_reflection", True) else None)
         events = [compute_direct(scene, tracer, ps, pr, air, c)]
+        events[0].exact = bool(getattr(cfg, "spherical_reflection", False) and adm is not None)
         if cfg.ism_order > 0:
             events += compute_image_sources(scene, planes, tri_plane, tracer,
                                             ps, pr, cfg.ism_order, air, c,
-                                            adm_table=adm)
+                                            adm_table=adm,
+                                            spherical=getattr(cfg, "spherical_reflection", False))
         if edges:
+            sph = getattr(cfg, "spherical_reflection", False)
             events += compute_diffraction(scene, tracer, edges, ps, pr,
-                                          air, c, refl_amp=refl_a)
+                                          air, c, refl_amp=refl_a,
+                                          planes=planes if sph else None, tri_plane=tri_plane,
+                                          adm_table=adm, spherical=sph)
         if rbs_dims is not None:
             _rbs.weight_image_sources(events, scene, rbs_dims, _BC, c, ps, pr)
         events = [ev for ev in events if ev.time < max_time]
@@ -403,22 +407,22 @@ def render_moving(scene: SceneData, source, receiver, dry: np.ndarray,
         for iev, ev in enumerate(ir_events):
             if float(np.max(ev.amps)) <= 0.0:
                 continue
-            spec = None
-            if adm is not None and getattr(ev, "bounces", None):
-                spec = event_reflection_spectrum(
-                    np.fft.rfftfreq(_FIR_NFFT, 1.0 / fs), ev.bounces, adm)
+            amps, spec, extra = event_correction(ev, adm, np.fft.rfftfreq(_FIR_NFFT, 1.0 / fs),
+                                                 fs)
             if stereo_out:
                 fl, fr2, dL, dR = event_fir_stereo(
-                    ev.amps, ev.direction, right, fs,
+                    amps, ev.direction, right, fs,
                     cfg.stereo_base_deg, spec_mul=spec)
             else:
                 fl, fr2, dL, dR = event_fir_pair(
-                    ev.amps, ev.direction, right, fs, c,
+                    amps, ev.direction, right, fs, c,
                     n_taps=n_taps_ev, spec_mul=spec,
                     hrtf_set=hset, basis=(fw, upv, right))
+            fl, c2 = lengthen(fl, extra)
+            fr2, _c2 = lengthen(fr2, extra)
             sg = sgn[iev + off]
-            placed.append((sg * fl, (ev.time + dL) * fs - center,
-                           sg * fr2, (ev.time + dR) * fs - center))
+            placed.append((sg * fl, (ev.time + dL) * fs - center - c2,
+                           sg * fr2, (ev.time + dR) * fs - center - c2))
         n_e = n_ir
         if by_keys:
             # shortest buffer that changes no placement (place_fir clips at the end)

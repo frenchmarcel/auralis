@@ -73,7 +73,9 @@ def engine_settings(settings, open_scene=False):
 
     An open scene gets the ANISOTROPIC conformal correction (cut layer + tangential
     apertures). The default one degrades open scenes with sharp edges. This one is better
-    on RS7 and neutral on RS6. Closed rooms keep the default (CR2 1.07 against 1.24 JND)."""
+    on RS7 and neutral on RS6. Closed rooms keep the default (CR2 1.07 against 1.24 JND).
+    An open scene also gets spherical-wave reflections on its image sources: the ground
+    effect of a point source, which plane-wave reflections miss by up to 10 dB."""
     mode = settings.get("mode", "survey")
     if mode not in MODES:
         raise ValueError("unknown mode '%s'" % mode)
@@ -84,6 +86,7 @@ def engine_settings(settings, open_scene=False):
            "diffraction": bool(settings.get("diffraction", True)),
            "fdtd_conformal": bool(settings.get("conformal", True)),
            "fdtd_conformal_aniso": bool(settings.get("conformal", True)) and bool(open_scene),
+           "spherical_reflection": bool(settings.get("spherical_reflection", open_scene)),
            "fdtd": uses_wave(settings),
            "fdtd_fcross": 0.0,
            "ambisonic_order": 2}
@@ -156,6 +159,12 @@ def build_manifest(sim, mesh, library, open_scene=False):
             from .library import perforated_spec
             d["phys"] = dict(perforated_spec(**{k: phys[k] for k in PERFORATED_KEYS if k in phys}),
                              anchor_alpha=True)
+            d["absorption"] = list(m["absorption"])
+        elif phys and phys.get("type") == "ground":
+            # a ground's own model: the wave band, the complex and spherical-wave
+            # reflections; the rays its random-incidence alphas
+            from auralis.engine.ground import ground_spec
+            d["phys"] = ground_spec(float(phys["sigma"]))
             d["absorption"] = list(m["absorption"])
         elif phys and phys.get("type") == "table":
             # measured complex admittance: the wave band and the complex reflections

@@ -28,9 +28,11 @@ class AcousticEvent:
     kind: str
     emit_dir: np.ndarray = None   # unit vector: emission direction from
                                   # the real source (for directivity)
-    bounces: object = None        # [(mat, cos_theta), ...] -> R(theta, f)
+    bounces: object = None        # [(mat, cos_theta[, r2, c]), ...] -> R(theta, f)
     points: object = None         # reflection / diffraction points, source side first
     planes: object = None         # patch index of each reflection, source side first
+    exact: bool = False           # long filter that keeps low-frequency detail
+    wedge: object = None          # (phi, phi0, n, L, R0, Rn, c) of a diffracted event
 
 
 def _unit(v):
@@ -100,13 +102,16 @@ def compute_image_sources(scene: SceneData, planes: List[Plane],
                           max_order: int, air_db_per_m,
                           speed_of_sound: float,
                           adm_table=None,
-                          min_amp: float = 1e-5) -> List[AcousticEvent]:
+                          min_amp: float = 1e-5,
+                          spherical: bool = False) -> List[AcousticEvent]:
     """Image sources validated up to `max_order`: every path is retraced
     from the receiver back to the source (finite patches, occlusions).
     Same events, in the same order, as compute_image_sources_reference:
     candidates are enumerated in numpy and a CONSERVATIVE pre-filter drops
     those whose reflection points miss their patch by more than the cast
-    tolerance; survivors go through the reference validation unchanged."""
+    tolerance; survivors go through the reference validation unchanged.
+    spherical: point-source (spherical-wave) reflection coefficients, which matter for
+    grazing paths over absorbing planes such as an outdoor ground."""
     src = np.asarray(src, dtype=np.float64)
     rcv = np.asarray(rcv, dtype=np.float64)
     if max_order <= 0 or not planes:
@@ -156,7 +161,7 @@ def compute_image_sources(scene: SceneData, planes: List[Plane],
             ev = _validate_path(scene, planes, tri_plane, tracer,
                                 src, rcv, seq, final, rprods[i],
                                 air_db_per_m, speed_of_sound, min_amp,
-                                adm_table)
+                                adm_table, spherical)
             if ev is not None:
                 events.append(ev)
     return events
@@ -200,7 +205,8 @@ def compute_image_sources_reference(scene: SceneData, planes: List[Plane],
                                     max_order: int, air_db_per_m,
                                     speed_of_sound: float,
                                     adm_table=None,
-                                    min_amp: float = 1e-5) -> List[AcousticEvent]:
+                                    min_amp: float = 1e-5,
+                                    spherical: bool = False) -> List[AcousticEvent]:
     """Reference (one Python validation per candidate): the anchor of the
     vectorised compute_image_sources, which must return the same events."""
     src = np.asarray(src, dtype=np.float64)
@@ -232,7 +238,7 @@ def compute_image_sources_reference(scene: SceneData, planes: List[Plane],
             ev = _validate_path(scene, planes, tri_plane, tracer,
                                 src, rcv, seq, img, rprod,
                                 air_db_per_m, speed_of_sound, min_amp,
-                                adm_table)
+                                adm_table, spherical)
             if ev is not None:
                 events.append(ev)
         frontier = nxt
@@ -241,7 +247,7 @@ def compute_image_sources_reference(scene: SceneData, planes: List[Plane],
 
 def _validate_path(scene, planes, tri_plane, tracer, src, rcv, seq,
                    final_image, rprod, air_db_per_m, c, min_amp,
-                   adm_table=None):
+                   adm_table=None, spherical=False):
     """Backtrack rcv -> ... -> src, casting real rays at every leg."""
     L = float(np.linalg.norm(final_image - rcv))
     if L < 1e-6:
@@ -300,6 +306,8 @@ def _validate_path(scene, planes, tri_plane, tracer, src, rcv, seq,
             return None
     if adm_table is not None:
         from .reflection import band_R_mag
+        if spherical:
+            mu_list = [(m, mu, L, c) for m, mu in mu_list]
         amps = band_R_mag(mu_list, adm_table) \
             * np.sqrt(np.maximum(air_e, 0.0)) / L
     return AcousticEvent(time=L / c, amps=amps.astype(np.float64),
@@ -308,4 +316,5 @@ def _validate_path(scene, planes, tri_plane, tracer, src, rcv, seq,
                          emit_dir=emit,
                          bounces=(list(mu_list) if adm_table is not None
                                   else None),
+                         exact=bool(spherical and adm_table is not None),
                          points=[p.copy() for p in hits[::-1]], planes=tuple(seq))

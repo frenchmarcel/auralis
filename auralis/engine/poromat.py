@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Physical material models: porous media (Miki, JCA) and multilayer
+"""Physical material models: porous media (Delany-Bazley, Miki, JCA) and multilayer
 stacks through transfer matrices, rigid backing, extended reaction.
 e^{+jwt} convention; provides Zs, R(theta, f), diffuse alpha and gamma."""
 from __future__ import annotations
@@ -37,6 +37,19 @@ def miki(f, sigma: float):
     return Zc, k
 
 
+def delany_bazley(f, sigma: float):
+    """(Zc, k) of the Delany-Bazley model. f: Hz (array), sigma: Pa.s/m^2.
+
+    The model that defines the effective flow resistivities of outdoor ground classes
+    (Nord2000, Harmonoise)."""
+    f = np.asarray(f, dtype=np.float64)
+    X = RHO0 * np.maximum(f, 1e-3) / float(sigma)
+    Zc = Z0 * (1.0 + 0.0571 * X ** -0.754 - 1j * 0.087 * X ** -0.732)
+    k = (2.0 * np.pi * f / C0) * (1.0 + 0.0978 * X ** -0.700
+                                  - 1j * 0.189 * X ** -0.595)
+    return Zc, k
+
+
 def jca(f, phi: float, sigma: float, alpha_inf: float,
         lam_v: float, lam_t: float):
     """(Zc, k) of the Johnson-Champoux-Allard model. phi: porosity;
@@ -63,7 +76,7 @@ def jca(f, phi: float, sigma: float, alpha_inf: float,
 
 
 def _layer_fluid(f, layer: dict):
-    """(Zc, k) of one layer: {"model": "air" | "miki" | "jca", ...}."""
+    """(Zc, k) of one layer: {"model": "air" | "delany_bazley" | "miki" | "jca", ...}."""
     m = layer.get("model", "air")
     if m == "air":
         f = np.asarray(f, dtype=np.float64)
@@ -71,6 +84,8 @@ def _layer_fluid(f, layer: dict):
                 (2.0 * np.pi * f / C0).astype(np.complex128))
     if m == "miki":
         return miki(f, float(layer["sigma"]))
+    if m == "delany_bazley":
+        return delany_bazley(f, float(layer["sigma"]))
     if m == "jca":
         return jca(f, float(layer.get("phi", 0.98)),
                    float(layer["sigma"]),
@@ -97,7 +112,8 @@ def _safe_sin_over(x):
 
 def surface_impedance(spec: dict, f, mu: float = 1.0):
     """NORMAL surface impedance Zs(f) at incidence cos(theta) = mu, with
-    rigid backing. spec = {"layers": [{"model", "d" (m), ...} front->back]}."""
+    rigid backing. spec = {"layers": [{"model", "d" (m), ...} front->back]}.
+    A last layer with "semi_infinite": true has no backing (a deep ground)."""
     f = np.asarray(f, dtype=np.float64)
     w = 2.0 * np.pi * np.maximum(f, 1e-3)
     mu = float(np.clip(mu, 1e-6, 1.0))
@@ -134,6 +150,14 @@ def surface_impedance(spec: dict, f, mu: float = 1.0):
             Zp = 1j * w * pm + pr + (kk / (1j * w) if kk > 0.0 else 0.0)
             A, B, Cc, D = A, A * Zp + B, Cc, Cc * Zp + D
             continue
+        if layer.get("semi_infinite"):
+            # the wave never comes back: the stack ends on the medium's own impedance
+            Zc, k = _layer_fluid(f, layer)
+            kz = np.sqrt(k * k - kx * kx)
+            kz = np.where(kz.imag > 0.0, -kz, kz)
+            Zt = Zc * k / kz
+            with np.errstate(divide="ignore", invalid="ignore"):
+                return (A * Zt + B) / (Cc * Zt + D)
         d = float(layer.get("d", 0.0))
         if d <= 0.0:
             continue

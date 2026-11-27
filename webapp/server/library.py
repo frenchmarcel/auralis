@@ -72,6 +72,26 @@ def _presets():
     return out
 
 
+def _grounds():
+    """Outdoor grounds: the Nord2000 impedance classes, Delany-Bazley on a semi-infinite
+    ground. Their phase is known, so image sources get the ground effect in open scenes."""
+    from auralis.engine import ground, poromat
+    out = []
+    for key, (sigma, desc) in ground.GROUND_CLASSES.items():
+        spec = ground.ground_spec(key)
+        name = "Ground class %s: %s" % (key, desc.split(" (")[0].lower())
+        out.append(_material("auralis:ground_" + key, "auralis", name, "Outdoor ground",
+                             poromat.alpha_bands(spec), 0.1,
+                             "Nord2000 impedance class %s (Jonasson and Storeheier, SP Rapport "
+                             "2001:11, Table 3.1)" % key,
+                             description="%s. Effective flow resistivity %g kPa.s/m2, "
+                                         "Delany-Bazley model on a semi-infinite ground."
+                             % (desc, sigma / 1e3),
+                             physical={"type": "ground", "class": key, "sigma": sigma,
+                                       "model": "delany_bazley"}))
+    return out
+
+
 def _pyroomacoustics():
     if not os.path.exists(PRA_FILE):
         return []
@@ -139,7 +159,7 @@ class Library:
         self.reload()
 
     def reload(self):
-        self.builtin = _presets() + _pyroomacoustics() + _odeon()
+        self.builtin = _presets() + _grounds() + _pyroomacoustics() + _odeon()
         self.custom = []
         if os.path.exists(self.custom_path):
             with open(self.custom_path, encoding="utf-8") as fh:

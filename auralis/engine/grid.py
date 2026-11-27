@@ -168,10 +168,14 @@ def grid_metrics(scene, source: SourceDef, points, cfg: BakeConfig = None,
             events = [compute_direct(scene, tracer, src, rcv, air, c)]
             if cfg.ism_order > 0:
                 events += compute_image_sources(scene, planes, tri_plane, tracer, src, rcv,
-                                                cfg.ism_order, air, c, adm_table=adm)
+                                                cfg.ism_order, air, c, adm_table=adm,
+                                                spherical=cfg.spherical_reflection)
             if edges:
                 events += compute_diffraction(scene, tracer, edges, src, rcv, air, c,
-                                              refl_amp=refl_a)
+                                              refl_amp=refl_a,
+                                              planes=(planes if cfg.spherical_reflection
+                                                      else None), tri_plane=tri_plane,
+                                              adm_table=adm, spherical=cfg.spherical_reflection)
             if rbs_dims is not None:
                 _rbs.weight_image_sources(events, scene, rbs_dims, _BC, c, src, rcv)
             events = [ev for ev in events if ev.time < max_time]

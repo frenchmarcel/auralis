@@ -171,3 +171,34 @@ def test_open_scene_has_no_statistical_reverberation():
     sim, g, mesh, lib = _panel_case(open_scene=True)
     v = simlib.validate(sim, g, mesh, lib)
     assert v["rt_estimate"] is None and "open scene" in v["rt_note"]
+
+
+def test_open_scenes_get_spherical_wave_reflections():
+    st = dict(default_settings(), mode="default")
+    assert simlib.engine_settings(st, open_scene=True)[0]["spherical_reflection"]
+    assert not simlib.engine_settings(st, open_scene=False)[0]["spherical_reflection"]
+    assert not simlib.engine_settings(dict(st, spherical_reflection=False),
+                                      open_scene=True)[0]["spherical_reflection"]
+
+
+def test_ground_classes_reach_the_engine_with_their_model():
+    """The Nord2000 grounds of the library: alphas from the model, and the model itself in
+    the manifest (wave band, complex and spherical-wave reflections)."""
+    from auralis.engine import ground, poromat
+    from auralis.engine.project import build_scene
+    lib = Library(os.path.join(tempfile.mkdtemp(), "custom.json"))
+    ids = [m["id"] for m in lib.all()["materials"] if m["category"] == "Outdoor ground"]
+    assert ids == ["auralis:ground_%s" % k for k in "ABCDEFG"]
+    m = lib.get("auralis:ground_C")
+    assert m["physical"]["type"] == "ground" and m["physical"]["sigma"] == 80e3
+    assert np.allclose(m["absorption"], poromat.alpha_bands(ground.ground_spec("C")), atol=1e-4)
+    sim = {"id": "g", "layers": {"g": {"material_id": m["id"], "scattering": None}},
+           "settings": default_settings()}
+    mesh = (np.zeros((3, 3)), np.zeros((1, 3), int), np.zeros(1, np.int32), np.ones(1, bool), ["g"])
+    man = simlib.build_manifest(sim, mesh, lib)
+    assert man["materials"]["g"]["phys"] == ground.ground_spec("C")
+    man["geometry"] = {"triangles": np.array([[[0, 0, 0], [1, 0, 0], [0, 1, 0]]], float),
+                       "tri_mat": np.zeros(1, np.int32)}
+    sc = build_scene(man, "")
+    assert sc.mat_phys[0]["layers"][0] == {"model": "delany_bazley", "sigma": 80e3,
+                                           "semi_infinite": True}

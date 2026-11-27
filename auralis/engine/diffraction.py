@@ -307,10 +307,15 @@ def _angle_in_wedge(v, edge: DiffEdge):
 def compute_diffraction(scene: SceneData, tracer, edges: List[DiffEdge],
                         src, rcv, air_db_per_m, speed_of_sound: float,
                         min_amp: float = 1e-5,
-                        refl_amp: Optional[np.ndarray] = None
-                        ) -> List[AcousticEvent]:
+                        refl_amp: Optional[np.ndarray] = None,
+                        planes=None, tri_plane=None, adm_table=None,
+                        spherical: bool = False) -> List[AcousticEvent]:
     """Source -> edge -> receiver paths (first order), ray-validated.
-    refl_amp: (n_mats, N_BANDS) in AMPLITUDE; None = rigid wedge."""
+    refl_amp: (n_mats, N_BANDS) in AMPLITUDE; None = rigid wedge.
+    planes, tri_plane: also the paths with one reflection on a plane before and/or after the
+    edge, through the image of the source and/or the receiver (a screen on a ground: the
+    four-path model). spherical: exact events, with the complex UTD coefficient and the
+    spherical-wave coefficient of the reflections."""
     src = np.asarray(src, dtype=np.float64)
     rcv = np.asarray(rcv, dtype=np.float64)
     k = 2.0 * np.pi * np.asarray(CENTERS, dtype=np.float64) / speed_of_sound
@@ -392,5 +397,160 @@ def compute_diffraction(scene: SceneData, tracer, edges: List[DiffEdge],
             amps=amps.astype(np.float64),
             direction=(D - rcv) / max(s, 1e-9),
             order=1, kind="diffracted",
-            emit_dir=(D - src) / max(sp, 1e-9), points=[np.asarray(D, float).copy()]))
+            emit_dir=(D - src) / max(sp, 1e-9), points=[np.asarray(D, float).copy()],
+            exact=bool(spherical),
+            wedge=(phi, phi0, ed.n, L, R0, Rn, float(speed_of_sound))))
+    if planes:
+        events += _reflected_diffraction(scene, tracer, edges, src, rcv, air_db_per_m,
+                                         speed_of_sound, min_amp, refl_amp, planes, tri_plane,
+                                         adm_table, spherical)
     return events
+
+
+def _mirror_point(p, pl):
+    return p - 2.0 * (float(np.dot(pl.normal, p)) - pl.d) * pl.normal
+
+
+def _hits_patch(tracer, start, point, pid, tri_plane):
+    """True when the segment start -> point first meets patch pid, at point."""
+    d = point - start
+    dist = float(np.linalg.norm(d))
+    if dist < 1e-6:
+        return False
+    d = d / dist
+    tri, t_hit, _n = tracer.cast(start, d, dist + 0.05)
+    return tri >= 0 and int(tri_plane[tri]) == pid and abs(t_hit - dist) <= 5e-3
+
+
+def _clear(tracer, a, b, pull_b):
+    """True when nothing blocks a -> b, stopping pull_b short of b."""
+    d = b - a
+    dist = float(np.linalg.norm(d))
+    if dist <= pull_b + _EPS * 12.0:
+        return False
+    d = d / dist
+    tri, _t, _n = tracer.cast(a + d * (_EPS * 4.0), d, dist - pull_b - _EPS * 4.0)
+    return tri < 0
+
+
+def _reflected_diffraction(scene, tracer, edges, src, rcv, air_db_per_m, c, min_amp,
+                           refl_amp, planes, tri_plane, adm_table, spherical):
+    """Edge paths with one reflection on a plane before the edge (image source), after it
+    (image receiver) or both, on the same plane. A reflection point must lie on its patch and
+    every leg must be clear."""
+    from .reflection import band_R_mag
+    k = 2.0 * np.pi * np.asarray(CENTERS, dtype=np.float64) / c
+    refl = np.sqrt(scene.reflectance())
+    out = []
+    for pid, pl in enumerate(planes):
+        ds = float(np.dot(pl.normal, src) - pl.d)
+        dr = float(np.dot(pl.normal, rcv) - pl.d)
+        if ds <= 1e-6 or dr <= 1e-6:
+            continue                     # the plane must face both
+        s_img, r_img = _mirror_point(src, pl), _mirror_point(rcv, pl)
+        for ed in edges:
+            # an edge lying on the plane (the foot of a screen, the rim of the ground) has
+            # no image path
+            if (abs(float(np.dot(pl.normal, ed.a)) - pl.d) < 1e-3
+                    or abs(float(np.dot(pl.normal, ed.b)) - pl.d) < 1e-3):
+                continue
+            for img_s, img_r in ((True, False), (False, True), (True, True)):
+                sv = s_img if img_s else src
+                rv = r_img if img_r else rcv
+                ev = _one_path(ed, sv, rv, src, rcv, img_s, img_r, pid, pl, k, tracer,
+                               tri_plane, air_db_per_m, c, min_amp, refl_amp, refl, adm_table,
+                               spherical, band_R_mag)
+                if ev is not None:
+                    out.append(ev)
+    return out
+
+
+def _one_path(ed, sv, rv, src, rcv, img_s, img_r, pid, pl, k, tracer, tri_plane,
+              air_db_per_m, c, min_amp, refl_amp, refl, adm_table, spherical, band_R_mag):
+    """One edge path between a (virtual) source sv and a (virtual) receiver rv."""
+    zs = float(np.dot(sv - ed.a, ed.e))
+    zr = float(np.dot(rv - ed.a, ed.e))
+    rs = float(np.linalg.norm((sv - ed.a) - ed.e * zs))
+    rr = float(np.linalg.norm((rv - ed.a) - ed.e * zr))
+    if rs < 1e-6 or rr < 1e-6:
+        return None
+    z = zs + rs * (zr - zs) / (rs + rr)
+    margin = min(0.01, 0.05 * ed.length)
+    if z < margin or z > ed.length - margin:
+        return None
+    D = ed.a + ed.e * z
+    vs, vr = sv - D, rv - D
+    sp, s = float(np.linalg.norm(vs)), float(np.linalg.norm(vr))
+    if sp < 1e-4 or s < 1e-4:
+        return None
+    phi0, _ = _angle_in_wedge(vs, ed)
+    phi, _ = _angle_in_wedge(vr, ed)
+    eps_a = 1e-4
+    if phi0 is None or phi is None or not (eps_a < phi0 < ed.theta - eps_a) \
+            or not (eps_a < phi < ed.theta - eps_a):
+        return None
+    nrm = pl.normal
+    half = 0.5 * ed.theta
+    bis = ed.t0 * np.cos(half) + ed.w0 * np.sin(half)
+    Doff = D + bis * (_EPS * 8.0)
+    pull = 0.75 * ed.thick + _EPS * 12.0
+    bounces, pts = [], [np.asarray(D, float).copy()]
+    mat = pl.material
+    # source side: src -> (P on the plane) -> D
+    if img_s:
+        den = float(np.dot(nrm, D - sv))
+        if abs(den) < 1e-9:
+            return None
+        t = (pl.d - float(np.dot(nrm, sv))) / den
+        if not (0.0 < t < 1.0):
+            return None
+        P = sv + t * (D - sv)
+        if not _hits_patch(tracer, src, P, pid, tri_plane) \
+                or not _clear(tracer, P + nrm * (_EPS * 4.0), Doff, pull):
+            return None
+        bounces.append((mat, abs(den) / sp, sp, c) if spherical else (mat, abs(den) / sp))
+        emit = (P - src) / max(float(np.linalg.norm(P - src)), 1e-9)
+        pts.insert(0, P)
+    else:
+        if not _clear(tracer, src, Doff, pull):
+            return None
+        emit = (D - src) / sp
+    # receiver side: D -> (Q on the plane) -> rcv
+    if img_r:
+        den = float(np.dot(nrm, rv - D))
+        if abs(den) < 1e-9:
+            return None
+        t = (pl.d - float(np.dot(nrm, D))) / den
+        if not (0.0 < t < 1.0):
+            return None
+        Q = D + t * (rv - D)
+        if not _hits_patch(tracer, rcv, Q, pid, tri_plane) \
+                or not _clear(tracer, Q + nrm * (_EPS * 4.0), Doff, pull):
+            return None
+        bounces.append((mat, abs(den) / s, s, c) if spherical else (mat, abs(den) / s))
+        arrive = (Q - rcv) / max(float(np.linalg.norm(Q - rcv)), 1e-9)
+        pts.append(Q)
+    else:
+        if not _clear(tracer, rcv, Doff, pull):
+            return None
+        arrive = (D - rcv) / s
+    sinb = float(np.clip(np.sqrt(max(0.0, 1.0 - (np.dot(vs, ed.e) / sp) ** 2)), 1e-4, 1.0))
+    L = (s * sp / (s + sp)) * sinb * sinb
+    R0 = Rn = None
+    if refl_amp is not None:
+        R0 = refl_amp[min(ed.mat0, len(refl_amp) - 1)]
+        Rn = refl_amp[min(ed.mat1, len(refl_amp) - 1)]
+    Dc = utd_coefficient(phi, phi0, ed.n, k, L, R0=R0, Rn=Rn)
+    amps = np.abs(Dc) / np.sqrt(sp * s * (sp + s))
+    amps *= np.sqrt(air_energy_factor(sp + s, air_db_per_m))
+    if adm_table is not None:
+        amps = amps * band_R_mag(bounces, adm_table)
+    else:
+        amps = amps * refl[mat] ** len(bounces)
+    if float(amps.max()) < min_amp:
+        return None
+    return AcousticEvent(time=(sp + s) / c, amps=amps.astype(np.float64), direction=arrive,
+                         order=1 + len(bounces), kind="diffracted", emit_dir=emit,
+                         bounces=bounces if adm_table is not None else None, points=pts,
+                         exact=bool(spherical and adm_table is not None),
+                         wedge=(phi, phi0, ed.n, L, R0, Rn, float(c)))

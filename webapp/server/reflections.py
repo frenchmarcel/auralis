@@ -62,12 +62,16 @@ def track(sim, mesh, library, geometry, source_id, receiver_id, max_order=None,
         events = [compute_direct(scene, tracer, ps, pr, air, c)]
         if order > 0:
             events += compute_image_sources(scene, planes, tri_plane, tracer, ps, pr, order,
-                                            air, c, adm_table=adm)
+                                            air, c, adm_table=adm,
+                                            spherical=cfg.spherical_reflection)
         if cfg.diffraction:
             edges = extract_edges(scene, max_edges=cfg.max_edges)
             if edges:
                 events += compute_diffraction(scene, tracer, edges, ps, pr, air, c,
-                                              refl_amp=np.sqrt(scene.reflectance()))
+                                              refl_amp=np.sqrt(scene.reflectance()),
+                                              planes=(planes if cfg.spherical_reflection
+                                                      else None), tri_plane=tri_plane,
+                                              adm_table=adm, spherical=cfg.spherical_reflection)
     finally:
         if eng is not None:
             eng.close()

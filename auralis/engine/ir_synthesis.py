@@ -7,7 +7,7 @@ from __future__ import annotations
 import numpy as np
 
 from .bands import band_masks, interp_band_gains, band_energy_fraction
-from .reflection import event_reflection_spectrum
+from .reflection import event_reflection_spectrum, long_event_fir
 from .hrtf import (FIR_TAPS, _FIR_NFFT, event_fir_pair, event_fir_stereo,
                    late_tail_binaural, late_tail_stereo,
                    place_fir, receiver_basis)
@@ -17,14 +17,39 @@ def _n_samples(n_bins, bin_dt, fs):
     return int(np.ceil(n_bins * bin_dt * fs)) + FIR_TAPS + 8
 
 
+def event_correction(ev, adm_table, freqs, fs):
+    """Reflection correction of an event: (band amplitudes for its short FIR, spectrum on
+    the short FIR grid or None, long FIR and centre or None).
+
+    An exact event (spherical-wave reflection, diffracted path with its complex UTD
+    coefficient, or the direct sound beside them) moves its whole spectrum to the long FIR:
+    its short FIR is then flat and carries only the direction (head, panning)."""
+    amps = np.asarray(ev.amps, dtype=np.float64)
+    bounces = getattr(ev, "bounces", None)
+    if getattr(ev, "exact", False):
+        return (np.ones_like(amps), None,
+                long_event_fir(amps, bounces if adm_table is not None else None,
+                               adm_table, fs, wedge=getattr(ev, "wedge", None)))
+    if adm_table is None or not bounces:
+        return amps, None, None
+    return amps, event_reflection_spectrum(freqs, bounces, adm_table), None
+
+
+def lengthen(fir, extra):
+    """Convolve an event FIR with its long correction; returns (fir, added centre)."""
+    if extra is None:
+        return fir, 0
+    return np.convolve(fir, extra[0]), extra[1]
+
+
 def _event_signs(events, seed):
-    """Per-event +/-1 polarity: +1 for the direct path and order 1,
-    random draw (seed-deterministic) beyond."""
+    """Per-event +/-1 polarity: +1 for the direct path, order 1 and exact events (their
+    phase is in their spectrum), random draw (seed-deterministic) beyond."""
     rng = np.random.default_rng((int(seed) ^ 0x5EED) & 0x7FFFFFFF)
     out = []
     for ev in events:
         keep = (getattr(ev, "kind", "") == "direct"
-                or getattr(ev, "order", 99) <= 1)
+                or getattr(ev, "order", 99) <= 1 or getattr(ev, "exact", False))
         out.append(1.0 if keep else float(rng.choice((-1.0, 1.0))))
     return out
 
@@ -52,16 +77,15 @@ def synthesize_binaural(events, hist, dirs, bin_dt, fs, speed_of_sound,
     for ie, ev in enumerate(events):
         if float(np.max(ev.amps)) <= 0.0:
             continue
-        spec = None
-        if adm_table is not None and getattr(ev, 'bounces', None):
-            spec = event_reflection_spectrum(_fir_freqs,
-                                             ev.bounces, adm_table)
-        firL, firR, dL, dR = event_fir_pair(ev.amps, ev.direction, right,
+        amps, spec, extra = event_correction(ev, adm_table, _fir_freqs, fs)
+        firL, firR, dL, dR = event_fir_pair(amps, ev.direction, right,
                                             fs, speed_of_sound,
                                             n_taps=n_taps_ev, spec_mul=spec,
                                             hrtf_set=hrtf_set, basis=basis)
-        place_fir(L, sgn[ie] * firL, (ev.time + dL) * fs - center)
-        place_fir(R, sgn[ie] * firR, (ev.time + dR) * fs - center)
+        firL, c2 = lengthen(firL, extra)
+        firR, _c2 = lengthen(firR, extra)
+        place_fir(L, sgn[ie] * firL, (ev.time + dL) * fs - center - c2)
+        place_fir(R, sgn[ie] * firR, (ev.time + dR) * fs - center - c2)
 
     rng = np.random.default_rng(seed)
     tL, tR = late_tail_binaural(hist, dirs, bin_dt, fs, n, right,
@@ -103,15 +127,14 @@ def synthesize_stereo(events, hist, dirs, bin_dt, fs, speed_of_sound,
     for ie, ev in enumerate(events):
         if float(np.max(ev.amps)) <= 0.0:
             continue
-        spec = None
-        if adm_table is not None and getattr(ev, 'bounces', None):
-            spec = event_reflection_spectrum(_fir_freqs,
-                                             ev.bounces, adm_table)
-        fl, fr, _dl, _dr = event_fir_stereo(ev.amps, ev.direction, right,
+        amps, spec, extra = event_correction(ev, adm_table, _fir_freqs, fs)
+        fl, fr, _dl, _dr = event_fir_stereo(amps, ev.direction, right,
                                             fs, base_deg,
                                             spec_mul=spec)
-        place_fir(L, sgn[ie] * fl, ev.time * fs - center)
-        place_fir(R, sgn[ie] * fr, ev.time * fs - center)
+        fl, c2 = lengthen(fl, extra)
+        fr, _c2 = lengthen(fr, extra)
+        place_fir(L, sgn[ie] * fl, ev.time * fs - center - c2)
+        place_fir(R, sgn[ie] * fr, ev.time * fs - center - c2)
 
     rng = np.random.default_rng(seed)
     tL, tR = late_tail_stereo(hist, dirs, bin_dt, fs, n, right, base_deg,
@@ -143,13 +166,13 @@ def synthesize_mono(events, hist, bin_dt, fs, seed: int = 0,
     for ie, ev in enumerate(events):
         if float(np.max(ev.amps)) <= 0.0:
             continue
-        mag = interp_band_gains(freqs, np.asarray(ev.amps, dtype=np.float64))
-        if adm_table is not None and getattr(ev, "bounces", None):
-            mag = mag * event_reflection_spectrum(freqs, ev.bounces,
-                                                  adm_table)
+        amps, spec, extra = event_correction(ev, adm_table, freqs, fs)
+        mag = interp_band_gains(freqs, amps)
+        if spec is not None:
+            mag = mag * spec
         h = np.fft.irfft(mag, _FIR_NFFT)
-        h = np.roll(h, center)[:FIR_TAPS] * win
-        place_fir(out, sgn[ie] * h, ev.time * fs - center)
+        h, c2 = lengthen(np.roll(h, center)[:FIR_TAPS] * win, extra)
+        place_fir(out, sgn[ie] * h, ev.time * fs - center - c2)
 
     rng = np.random.default_rng(seed)
     masks = band_masks(np.fft.rfftfreq(n, 1.0 / fs), fs)
@@ -259,15 +282,16 @@ def synthesize_ambisonic(events, hist, dirs, bin_dt, fs, order: int = 2,
     for ie, ev in enumerate(events):
         if float(np.max(ev.amps)) <= 0.0:
             continue
-        mag = interp_band_gains(freqs, np.asarray(ev.amps, dtype=np.float64))
-        if adm_table is not None and getattr(ev, "bounces", None):
-            mag = mag * event_reflection_spectrum(freqs, ev.bounces, adm_table)
+        amps, spec, extra = event_correction(ev, adm_table, freqs, fs)
+        mag = interp_band_gains(freqs, amps)
+        if spec is not None:
+            mag = mag * spec
         h = np.fft.irfft(mag, _FIR_NFFT)
-        h = np.roll(h, center)[:FIR_TAPS] * win
+        h, c2 = lengthen(np.roll(h, center)[:FIR_TAPS] * win, extra)
         y = sh_sn3d(ev.direction, order)[0]
         for ch in range(n_ch):
             if y[ch] != 0.0:
-                place_fir(out[:, ch], sgn[ie] * y[ch] * h, ev.time * fs - center)
+                place_fir(out[:, ch], sgn[ie] * y[ch] * h, ev.time * fs - center - c2)
 
     from .metrics import smoothed_directions
     a_bin, unit = smoothed_directions(hist, dirs)
