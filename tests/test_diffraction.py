@@ -36,6 +36,8 @@ def check(name, cond, extra=""):
     else:
         FAIL += 1
         print("  FAIL %s %s" % (name, extra))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (name, extra))
 
 
 C = speed_of_sound(20.0)
@@ -267,7 +269,9 @@ def test_open_doorway():
         return sum(float((e.amps ** 2).sum())
                    for e in res.events if e.time < tmax)
     nd = int(r1.stats["diff_events"])
-    diff_ev = [e for e in r1.events if e.kind == "diffracted"]
+    # first-order edge paths; an open scene also gets the paths that reflect on a plane
+    # before or after the edge (spherical_reflection), later by construction
+    diff_ev = [e for e in r1.events if e.kind == "diffracted" and e.order == 1]
     spec_t = min(e.time for e in r1.events
                  if e.kind == "specular" and (e.amps ** 2).sum() > 1e-6)
     check("open door: diffracted paths (%d, edges=%d)"

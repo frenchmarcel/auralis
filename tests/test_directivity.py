@@ -33,6 +33,8 @@ def check(name, cond, extra=""):
     else:
         FAIL += 1
         print("  FAIL %s %s" % (name, extra))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (name, extra))
 
 
 def test_tables():
@@ -143,15 +145,18 @@ def test_tracers():
                              air, seed=42, src_forward=[0, 0, -1],
                              dir_table=ones)
         check("native: omni table == no table", np.allclose(n0, n1))
-        nd, _, _ = eng.trace(src, rcv, kw["n_rays"], kw["max_bounces"],
-                             kw["max_time"], kw["bin_dt"], kw["n_bins"], c,
-                             air, seed=42, src_forward=fwd,
-                             dir_table=sp.table)
+        # two Monte Carlo estimates: one draw each differs by up to 5 % (std 2.6 %), so
+        # compare their means over 4 seeds (std 1.3 %), at a fixed thread count
+        seeds = (42, 43, 44, 45)
+        eN = np.mean([eng.trace(src, rcv, kw["n_rays"], kw["max_bounces"], kw["max_time"],
+                                kw["bin_dt"], kw["n_bins"], c, air, seed=s, n_threads=4,
+                                src_forward=fwd, dir_table=sp.table)[0].sum() for s in seeds])
         eng.close()
-        eN = nd.sum()
-        eP = hp.sum()
-        check("native vs python (directive): energy < 2.5 %",
-              abs(eN / eP - 1.0) < 0.025,
+        kw_p = {k: v for k, v in kw.items() if k != "seed"}
+        eP = np.mean([stochastic.trace_python(sc, src, rcv, **kw_p, seed=s, src_forward=fwd,
+                                              dir_table=sp.table)[0].sum() for s in seeds])
+        check("native vs python (directive): mean energy < 4 % (3 sigma)",
+              abs(eN / eP - 1.0) < 0.04,
               "(%.2f %%)" % (100 * abs(eN / eP - 1)))
 
 

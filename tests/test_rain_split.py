@@ -36,6 +36,8 @@ def check(name, cond, detail=""):
     else:
         FAIL += 1
         print("  FAIL %s %s" % (name, detail))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (name, detail))
 
 
 def _ratio(engine, n_rays, seed, lib_path=None):

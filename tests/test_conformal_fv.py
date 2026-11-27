@@ -34,6 +34,8 @@ def check(name, cond, detail=""):
     else:
         FAIL += 1
         print("  FAIL %s %s" % (name, detail))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (name, detail))
 
 
 def _flat_box(alpha):
@@ -133,9 +135,11 @@ def test_t20_energy():
             sc, R = _rotz(sc, deg)
             s, r = R @ s, R @ r
         for conf in (False, True):
+            # no subsonic high-pass: this broadband T20 holds the room's lowest content,
+            # which the closed-room 16 Hz cut reshapes (1.159 against 1.076 with it)
             ir, info = run_low_band(sc, s, r, fs=fs, duration=1.4,
                                     f_cross=423.0, speed_of_sound=C,
-                                    engine="native", conformal=conf)
+                                    engine="native", conformal=conf, subsonic_hz=0.0)
             res[(deg, conf)] = _t20(ir, fs)
     t_ey = 0.161 * V_TRUE / (-A_TRUE * np.log(1 - 0.12))
     ra = res[(0.0, True)] / res[(0.0, False)]

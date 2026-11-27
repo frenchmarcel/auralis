@@ -29,6 +29,8 @@ def check(label, ok):
     print(("  [ok] " if ok else "  [FAIL] ") + label)
     if not ok:
         FAILED.append(label)
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError(label)
 
 
 def _pipeline(spec, dx):

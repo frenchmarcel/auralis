@@ -33,6 +33,8 @@ def check(label, ok):
     else:
         _n_fail += 1
         print("  FAIL %s " % label)
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError(label)
 
 
 def test_closed_forms():
@@ -71,7 +73,7 @@ def _anechoic_pair():
 def test_free_field_bake():
     sc, src, rcv = _anechoic_pair()
     res = bake(sc, src, rcv, BakeConfig(fs=48000, n_rays=20000,
-                                        normalize=False, seed=7))
+                                        normalize=False, seed=7, ambisonic_order=1))
     d = 2.5
     g_th = 20 * np.log10(10 / d)
     check("anechoic bake: G_mid %.2f dB (theory %.2f, tol 0.15)"
@@ -85,8 +87,14 @@ def test_free_field_bake():
     drop = L[3] - L[6]
     check("air visible at 8 kHz (drop %.2f dB, expected ~0.26)" % drop,
           0.1 < drop < 0.45)
-    pk = float(np.abs(res.ir).max())
-    check("absolute waveform: peak %.4f ~ 1/d = %.4f (tol 4%%)" % (pk, 1 / d),
+    # the omni channel (the binaural ear facing the source gets the head's gain), and its true
+    # peak: the direct sound lands between two samples
+    w = np.asarray(res.ambi[:, 0], dtype=np.float64)
+    k = int(np.argmax(np.abs(w)))
+    seg = w[max(k - 256, 0):k + 256]
+    up = np.fft.irfft(np.fft.rfft(seg), 16 * len(seg)) * 16
+    pk = float(np.abs(up).max())
+    check("absolute waveform: omni true peak %.4f ~ 1/d = %.4f (tol 4%%)" % (pk, 1 / d),
           abs(pk * d - 1.0) < 0.04)
 
 

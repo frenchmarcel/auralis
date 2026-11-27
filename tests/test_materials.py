@@ -24,6 +24,8 @@ def check(label, cond, extra=""):
     else:
         _n_fail += 1
         print("  FAIL %s %s" % (label, extra))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (label, extra))
 
 
 def test_air_layer_exact():

@@ -29,6 +29,8 @@ def check(name, cond, extra=""):
     else:
         FAIL += 1
         print("  FAIL %s %s" % (name, extra))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (name, extra))
 
 
 C = 343.0

@@ -34,6 +34,8 @@ def check(name, cond, detail=""):
     else:
         FAIL += 1
         print("  FAIL %s %s" % (name, detail))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (name, detail))
 
 
 def rt_from_hist(hist, bin_dt, lo=-5.0, hi=-25.0):

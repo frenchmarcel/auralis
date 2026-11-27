@@ -30,6 +30,8 @@ def check(label, cond, extra=""):
     else:
         _n_fail += 1
         print("  FAIL %s %s" % (label, extra))
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError("%s %s" % (label, extra))
 
 
 def _lib_native():
@@ -207,33 +209,28 @@ def test_open_scene_stability():
 
 
 # ---------------------------------------------------------------------------
-def _onset(x, fs, thr=0.2):
-    e = np.abs(x)
-    pk = float(e.max())
-    idx = int(np.nonzero(e > thr * pk)[0][0])
-    if idx == 0:
-        return 0.0
-    y0, y1 = e[idx - 1], e[idx]
-    return (idx - 1 + (thr * pk - y0) / max(y1 - y0, 1e-30)) / fs
-
 
 def test_ears_in_grid():
-    """Two probes 17.5 cm apart in a very absorbing box: the onset ITD
-    (20 % threshold) must follow the geometry within 60 us."""
+    """Two probes 17.5 cm apart in a very absorbing box: the ITD (cross-correlation of the
+    first 5 ms) must follow the geometry within 25 us. The 20 % onset is no estimator here:
+    the fourth-order grid propagates a slight high-frequency precursor."""
     print("[ears] onset ITD, lateral and frontal (fc 400)")
     fs = 48000
     sc = box_scene(6.0, 5.0, 3.0, alpha=0.85)
     ctr = np.array([2.2, 2.5, 1.5])
     right = np.array([1.0, 0.0, 0.0])
     ears = [ctr - 0.0875 * right, ctr + 0.0875 * right]
-    for src, lab, tol in ((np.array([4.4, 2.5, 1.5]), "lateral", 60e-6),
+    for src, lab, tol in ((np.array([4.4, 2.5, 1.5]), "lateral", 25e-6),
                           (np.array([2.2, 4.3, 1.5]), "frontal", 25e-6)):
         ir, fi = run_low_band(sc, src, ears, fs=fs, duration=0.06,
                               f_cross=400.0, speed_of_sound=343.0)
         d = float(np.linalg.norm(src - ctr))
         i0 = int((d / 343.0 - 2e-3) * fs)
-        i1 = int((d / 343.0 + 6e-3) * fs)
-        lag = _onset(ir[i0:i1, 0], fs) - _onset(ir[i0:i1, 1], fs)
+        a, b = ir[i0:i0 + int(5e-3 * fs), 0], ir[i0:i0 + int(5e-3 * fs), 1]
+        n, up = 1 << 14, 16
+        xc = np.fft.irfft(np.fft.rfft(a, n) * np.conj(np.fft.rfft(b, n)), n * up)
+        k = int(np.argmax(xc))
+        lag = (k - n * up if k > n * up // 2 else k) / float(fs * up)
         itd = (np.linalg.norm(src - ears[0])
                - np.linalg.norm(src - ears[1])) / 343.0
         check("ITD %s within %.0f us" % (lab, tol * 1e6),

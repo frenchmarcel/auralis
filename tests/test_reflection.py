@@ -22,6 +22,7 @@ from auralis.engine.reflection import (  # noqa: E402
     _gamma_of,
 )
 
+from auralis.engine.air import config_speed_of_sound  # noqa: E402
 C = 343.0
 _n_ok = 0
 _n_fail = 0
@@ -35,6 +36,8 @@ def check(label, ok):
     else:
         _n_fail += 1
         print("  FAIL %s " % label)
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError(label)
 
 
 def test_paris():
@@ -96,7 +99,7 @@ def test_event_amplitudes():
     sc, src, rcv = _floor_scene()
     res = bake(sc, src, rcv, BakeConfig(fs=48000, n_rays=3000,
                                         normalize=False, seed=2,
-                                        ism_order=1))
+                                        ism_order=1, rbs_scattering=False))
     tab = build_admittance_table(sc.absorption)
     d2 = float(np.hypot(3.4, 3.0))
     mu = 3.0 / d2
@@ -121,7 +124,7 @@ def test_interference_comb():
     sc, src, rcv = _floor_scene()
     res = bake(sc, src, rcv, BakeConfig(fs=48000, n_rays=3000,
                                         normalize=False, seed=2,
-                                        ism_order=1))
+                                        ism_order=1, rbs_scattering=False))
     tab = build_admittance_table(sc.absorption)
     ev = [e for e in res.events if e.kind == "specular" and e.bounces
           and e.bounces[0][0] == 0][0]
@@ -139,10 +142,11 @@ def test_interference_comb():
     airn = air1 ** (d2 / d1)
     U = event_reflection_spectrum(f, ev.bounces, tab) \
         * interp_band_gains(f, band_R_mag(ev.bounces, tab))
+    c = config_speed_of_sound(res.config)       # the engine's (humid air), not a constant
     Hth = np.abs(interp_band_gains(f, air1)
-                 * np.exp(-2j * np.pi * f * d1 / C) / d1
+                 * np.exp(-2j * np.pi * f * d1 / c) / d1
                  + U * interp_band_gains(f, airn)
-                 * np.exp(-2j * np.pi * f * d2 / C) / d2)
+                 * np.exp(-2j * np.pi * f * d2 / c) / d2)
     m = (f >= 300) & (f <= 4000)
     err = (20 * np.log10(np.maximum(H[m], 1e-9))
            - 20 * np.log10(np.maximum(Hth[m], 1e-9)))
@@ -173,7 +177,7 @@ def test_legacy_toggle():
     sc, src, rcv = _floor_scene()
     res = bake(sc, src, rcv, BakeConfig(fs=48000, n_rays=3000,
                                         normalize=False, seed=2,
-                                        ism_order=1,
+                                        ism_order=1, rbs_scattering=False,
                                         complex_reflection=False))
     ev = [e for e in res.events if e.kind == "specular"][0]
     check("legacy: no bounces, flag at 0",

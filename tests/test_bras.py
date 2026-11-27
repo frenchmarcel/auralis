@@ -31,6 +31,8 @@ def check(label, cond):
     else:
         _n_fail += 1
         print("  FAIL %s" % label)
+        if "PYTEST_CURRENT_TEST" in os.environ:     # under pytest a failed check fails
+            raise AssertionError(label)
 
 
 # ---------------------------------------------------------------------------
